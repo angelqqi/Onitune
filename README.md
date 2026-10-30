@@ -1,8 +1,27 @@
 <p align="center"><img src="assets/icon.png" width="128" alt="Icono de Onitune: un onigiri con forma de botón de play"></p>
 
-# Onitune
+<h1 align="center">Onitune</h1>
 
-App de escritorio para descargar **audio y video de YouTube**, hecha en Python con [Flet](https://flet.dev) y [yt-dlp](https://github.com/yt-dlp/yt-dlp). Funciona en Windows y Linux.
+<p align="center">
+  <b>Descarga música y video de YouTube con una app bonita, simple y gratis.</b><br>
+  MP3 o FLAC con portada y artista correctos · Video hasta 4K · 14 temas de color · Sin anuncios
+</p>
+
+<p align="center">
+  <a href="https://github.com/angelqqi/Onitune/releases/latest"><img src="https://img.shields.io/github/v/release/angelqqi/Onitune?label=versi%C3%B3n&color=bd93f9" alt="Última versión"></a>
+  <a href="https://github.com/angelqqi/Onitune/releases"><img src="https://img.shields.io/github/downloads/angelqqi/Onitune/total?label=descargas&color=ff79c6" alt="Descargas"></a>
+  <img src="https://img.shields.io/badge/Windows%20%7C%20Linux-50fa7b?label=funciona%20en" alt="Windows y Linux">
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/angelqqi/Onitune?label=licencia&color=8be9fd" alt="Licencia MIT"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/angelqqi/Onitune/releases/latest"><b>⬇️ Descargar para Windows</b></a>
+  &nbsp;·&nbsp; sin instalar Python · sin permisos de administrador
+</p>
+
+<p align="center"><img src="docs/capturas/portada.png" alt="Onitune analizando un video: muestra las calidades disponibles, de 144p a 4K, en tema oscuro y claro"></p>
+
+## Qué hace
 
 - **Audio:** MP3, M4A, OPUS, FLAC o WAV, con portada y metadatos. Se puede pegar un enlace o buscar por nombre y elegir entre los resultados.
 - **Búsqueda en YouTube Music:** al buscar por nombre, busca canciones en YouTube Music para que el archivo quede con artista y álbum correctos. Se puede apagar en Ajustes.
@@ -13,6 +32,45 @@ App de escritorio para descargar **audio y video de YouTube**, hecha en Python c
 - **Historial:** buscar, filtrar, abrir el archivo o la carpeta, volver a descargar y borrar.
 - **Temas:** 14 temas de color (Drácula, Alucard, Tokyo Night, Catppuccin, Nord, Gruvbox, Rosé Pine, Solarized…) que se eligen en Ajustes.
 - **Extras:** detecta enlaces de YouTube copiados, usa cookies del navegador (para videos con restricción de edad), muestra avisos del sistema y avisa cuando hay una versión nueva de Onitune.
+
+## Capturas
+
+### Buscar música por nombre
+Escribe un artista o una canción y elige entre los resultados de YouTube Music. El archivo queda con portada, artista y álbum.
+
+<img src="docs/capturas/audio.png" alt="Pestaña Audio: búsqueda con resultados, formatos MP3, M4A, OPUS, FLAC y WAV">
+
+### Video en la calidad que quieras
+Al pegar un enlace, Onitune muestra solo las calidades que ese video tiene de verdad (hasta 4K y 60 fps).
+
+<img src="docs/capturas/video.png" alt="Pestaña Video: calidades disponibles de 144p a 2160p 4K, formato MP4 o MKV y subtítulos">
+
+### Varias descargas a la vez
+Pausa, reanuda o cancela cada una. Si cierras la app, las pendientes siguen la próxima vez.
+
+<img src="docs/capturas/descargas.png" alt="Pestaña Descargas: dos descargando con barra de progreso, una en pausa, una en espera y una completada">
+
+### Copias un enlace y la app te avisa
+<img src="docs/capturas/portapapeles.png" alt="Aviso de enlace de YouTube copiado con botones Video y Audio">
+
+### Historial
+Busca lo que ya bajaste, ábrelo, abre su carpeta o vuelve a descargarlo.
+
+<img src="docs/capturas/historial.png" alt="Pestaña Historial con descargas de audio y video, filtros por tipo y fecha">
+
+### 14 temas de color
+<img src="docs/capturas/temas.png" alt="La misma pantalla en 9 de los 14 temas: Drácula, Tokyo Night, Catppuccin Mocha, Nord, Rosé Pine, Gruvbox, Alucard, Catppuccin Latte y Rosé Pine Dawn">
+
+<details>
+<summary>Más capturas (Ajustes, tema claro)</summary>
+
+<img src="docs/capturas/ajustes.png" alt="Pestaña Ajustes: carpetas de descarga, cookies y selector de temas">
+
+<img src="docs/capturas/video-claro.png" alt="Pestaña Video con el tema claro Catppuccin Latte">
+
+</details>
+
+> Las capturas usan contenido de licencia libre: películas abiertas de [Blender](https://studio.blender.org/films/) y música de [NoCopyrightSounds](https://ncs.io).
 
 ## Créditos
 
