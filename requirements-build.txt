@@ -1,0 +1,4 @@
+# Lo necesario para crear el ejecutable (python build.py)
+-r requirements.txt
+pyinstaller>=6.22
+pillow  # solo para tools/make_icon.py

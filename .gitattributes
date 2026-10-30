@@ -1,0 +1,7 @@
+# Finales de línea: los .bat necesitan CRLF (Windows) y los .sh LF (Linux)
+*.bat text eol=crlf
+*.sh  text eol=lf
+*.ps1 text eol=crlf
+# Archivos binarios
+*.ico binary
+*.png binary

@@ -1,0 +1,20 @@
+# Entorno de Python y cachés
+.venv/
+__pycache__/
+*.pyc
+
+# Resultado de python build.py
+build/
+dist/
+*.spec
+
+
+# Respaldos comprimidos del proyecto (pueden llevar cookies o ajustes personales)
+*.7z
+
+# Nunca subir cookies: dan acceso a tu cuenta
+cookies.txt
+
+# Claude Code (CLAUDE.md, skill y ajustes): se guarda en un repo privado aparte
+.claude/
+CLAUDE.md
