@@ -61,6 +61,11 @@ Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs 
 Name: "{autoprograms}\Onitune"; Filename: "{app}\Onitune.exe"
 Name: "{autodesktop}\Onitune"; Filename: "{app}\Onitune.exe"; Tasks: desktopicon
 
+[Registry]
+; La app se registra sola para que sus avisos digan "Onitune" (core/notify.py).
+; Aquí solo se indica que esa clave se borre al desinstalar.
+Root: HKCU; Subkey: "Software\Classes\AppUserModelId\angelqqi.Onitune"; Flags: uninsdeletekey dontcreatekey
+
 [Run]
 ; Casilla "Ejecutar Onitune" al terminar la instalación
 Filename: "{app}\Onitune.exe"; Description: "{cm:LaunchProgram,Onitune}"; Flags: nowait postinstall skipifsilent

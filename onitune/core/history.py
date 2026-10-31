@@ -80,3 +80,19 @@ class History:
                     break
             self._save()
         self._changed()
+
+    def clear(self, delete_files: bool = False) -> int:
+        """Borra todo el historial de una vez. Devuelve cuántas entradas había."""
+        with self._lock:
+            count = len(self.entries)
+            if delete_files:
+                for entry in self.entries:
+                    if entry.file_exists:
+                        try:
+                            os.remove(entry.filepath)
+                        except OSError:
+                            pass  # archivo en uso o sin permiso: se deja
+            self.entries = []
+            self._save()
+        self._changed()
+        return count

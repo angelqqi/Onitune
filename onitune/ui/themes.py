@@ -4,11 +4,12 @@ Para añadir un tema nuevo basta con agregar un `Palette` a la lista THEMES.
 Los colores de cada tema vienen de sus paletas oficiales (créditos en
 THIRD_PARTY_LICENSES.md); en algunos claros se oscureció un poco el
 verde/amarillo para que el texto se lea bien.
+
+La página (web/style.css) usa cada color como variable CSS (--bg, --card...).
+Los colores intermedios (selección suave, bordes) se calculan allí con color-mix().
 """
 
-from dataclasses import dataclass
-
-import flet as ft
+from dataclasses import asdict, dataclass
 
 
 @dataclass(frozen=True)
@@ -75,51 +76,6 @@ def get(theme_id: str) -> Palette:
     return BY_ID.get(old.get(theme_id, theme_id), BY_ID[DEFAULT])
 
 
-def _mix(a: str, b: str, amount: float) -> str:
-    """Mezcla dos colores #RRGGBB. amount=0 da `b`, amount=1 da `a`."""
-    ca = [int(a[i : i + 2], 16) for i in (1, 3, 5)]
-    cb = [int(b[i : i + 2], 16) for i in (1, 3, 5)]
-    return "#" + "".join(f"{round(x * amount + y * (1 - amount)):02X}" for x, y in zip(ca, cb))
-
-
-def build(p: Palette) -> ft.Theme:
-    """Convierte una paleta en un tema de Flet (Material 3)."""
-    on_color = p.bg if p.dark else "#FFFFFF"
-    soft = _mix(p.primary, p.card, 0.28)  # selección suave (menú, botones segmentados)
-    scheme = ft.ColorScheme(
-        primary=p.primary,
-        on_primary=p.on_primary,
-        primary_container=soft,
-        on_primary_container=p.fg,
-        secondary=p.secondary,
-        on_secondary=on_color,
-        secondary_container=soft,
-        on_secondary_container=p.fg,
-        tertiary=p.ok,
-        on_tertiary=on_color,
-        tertiary_container=_mix(p.ok, p.card, 0.25),
-        on_tertiary_container=p.fg,
-        error=p.error,
-        on_error=on_color,
-        error_container=_mix(p.error, p.card, 0.25),
-        on_error_container=p.fg,
-        surface=p.bg,
-        on_surface=p.fg,
-        on_surface_variant=p.muted,
-        outline=_mix(p.border, p.fg, 0.6),
-        outline_variant=p.border,
-        shadow="#000000",
-        scrim="#000000",
-        inverse_surface=p.fg,
-        on_inverse_surface=p.bg,
-        inverse_primary=p.primary,
-        surface_tint=p.bg,  # sin el tinte de color que Material pone en diálogos y tarjetas
-        surface_dim=p.rail,
-        surface_bright=p.high,
-        surface_container_lowest=p.bg,
-        surface_container_low=p.card,
-        surface_container=p.card,
-        surface_container_high=p.high,
-        surface_container_highest=p.high,
-    )
-    return ft.Theme(color_scheme=scheme, scaffold_bgcolor=p.bg, visual_density=ft.VisualDensity.COMPACT)
+def to_dict(p: Palette) -> dict:
+    """La paleta como diccionario, para mandarla a la página (web/app.js)."""
+    return asdict(p)

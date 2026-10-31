@@ -29,7 +29,7 @@
 - **Video:** analiza el enlace y muestra solo las resoluciones que ese video tiene. MP4 o MKV, con subtítulos incrustados o en un archivo aparte.
 - **Playlists:** muestra la lista para seleccionar qué videos descargar.
 - **Descargas:** varias a la vez, con pausa, reanudación, cancelación y reintento. Las pendientes se guardan al cerrar la app.
-- **Historial:** buscar, filtrar, abrir el archivo o la carpeta, volver a descargar y borrar.
+- **Historial:** buscar, filtrar, abrir el archivo o la carpeta, volver a descargar y borrar (de a uno o todo de una vez).
 - **Temas:** 14 temas de color (Drácula, Alucard, Tokyo Night, Catppuccin, Nord, Gruvbox, Rosé Pine, Solarized…) que se eligen en Ajustes.
 - **Extras:** detecta enlaces de YouTube copiados, usa cookies del navegador (para videos con restricción de edad), muestra avisos del sistema y avisa cuando hay una versión nueva de Onitune.
 
@@ -80,7 +80,7 @@ Busca lo que ya bajaste, ábrelo, abre su carpeta o vuelve a descargarlo.
 ## Licencia y aviso legal
 
 - El código de Onitune tiene licencia **MIT** (ver [LICENSE](LICENSE)): se puede usar, modificar y compartir libremente, manteniendo el aviso de copyright.
-- Los programas de terceros que usa (yt-dlp, FFmpeg, Flet…) y sus licencias están en [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md). yt-dlp y FFmpeg **no** van incluidos: la app los descarga de sus páginas oficiales.
+- Los programas de terceros que usa (yt-dlp, FFmpeg, pywebview…) y sus licencias están en [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md). yt-dlp y FFmpeg **no** van incluidos: la app los descarga de sus páginas oficiales.
 - Onitune **no está afiliado** a YouTube ni a Google. "YouTube" es una marca de Google LLC y se menciona solo para describir para qué sirve la app.
 - Descargar contenido puede ir contra los términos de YouTube o los derechos de autor de quien lo creó. **La app debe usarse solo con contenido que se tenga derecho a guardar** (por ejemplo, videos propios o contenido con licencia libre). Cada persona es responsable de cómo la usa.
 
@@ -115,9 +115,9 @@ Los lanzadores (`Onitune.bat` / `Onitune.sh`) hacen esto:
 3. Instalan lo que hay en `requirements.txt`.
 4. Abren la app.
 
-> **¿Por qué Python 3.13?** Las versiones más nuevas (3.15) todavía no tienen todas las librerías listas; por ejemplo, la herramienta `flet-cli` no se instala. En Windows se puede tener 3.13 al lado de otra versión: `py install 3.13`.
+> **¿Por qué Python 3.13?** Es la versión con la que se prueba la app. En Windows se puede tener 3.13 al lado de otra versión: `py install 3.13`.
 >
-> En Linux, Flet puede necesitar algunas librerías del sistema. Si la ventana no abre, la [guía de Flet para Linux](https://flet.dev/docs/publish/linux) explica cuáles instalar.
+> La ventana usa el navegador del sistema: en Windows, Edge WebView2 (ya viene con Windows 10 y 11). En Linux necesita GTK y WebKit; en Ubuntu/Debian: `sudo apt install python3-gi gir1.2-webkit2-4.1`.
 
 ## Crear el ejecutable
 
@@ -153,17 +153,13 @@ onitune/
     updates.py          Revisa en GitHub si hay una versión nueva de Onitune
     notify.py           Avisos de Windows/Linux
     proc.py             Ejecutar programas sin abrir consolas, abrir archivos y carpetas
-  ui/                   La interfaz (Flet)
-    app.py              Ventana principal, menú lateral, temas, avisos (portapapeles y versión nueva)
+    clipboard.py        Leer el portapapeles (Windows y Linux)
+  ui/                   La interfaz: una página web mostrada con pywebview
+    app.py              Abre la ventana y le avisa a la página de los cambios (cola, historial, avisos)
+    api.py              Las funciones de Python que la página puede usar (buscar, analizar, descargar...)
     themes.py           Los temas de color (para agregar uno, se suma a la lista)
-    audio_view.py       Pestaña Audio
-    video_view.py       Pestaña Video
-    queue_view.py       Pestaña Descargas
-    history_view.py     Pestaña Historial
-    settings_view.py    Pestaña Ajustes (incluye el selector de temas y "Acerca de")
-    setup_view.py       Pantalla del primer arranque
-    playlist_dialog.py  Ventana para elegir videos de una playlist
-    common.py           Piezas compartidas (tarjetas, miniaturas, colores)
+    web/                La página: index.html, style.css (diseño) y app.js (pestañas, diálogos, avisos)
+      fonts/            Iconos de Material
 tools/make_icon.py      Dibuja el icono (assets/icon.png, assets/icon.ico)
 build.py                Crea el ejecutable
 ```

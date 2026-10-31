@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Onitune</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Primer arranque: descarga de yt-dlp y ffmpeg -->
+  <div id="setup" hidden></div>
+
+  <!-- Ventana principal -->
+  <div id="main" hidden>
+    <nav id="rail">
+      <div class="brand">
+        <img id="logo" alt="">
+        <div>
+          <div class="brand-name">Onitune</div>
+          <div class="brand-sub">Audio y video de YouTube</div>
+        </div>
+      </div>
+      <div id="destinations"></div>
+      <div class="rail-space"></div>
+      <div class="status-card">
+        <div class="status-line"><span class="dot" id="dot-ytdlp"></span><span id="txt-ytdlp">yt-dlp listo</span></div>
+        <div class="status-line"><span class="dot ok"></span><span>ffmpeg listo</span></div>
+        <div class="status-line"><span class="dot info"></span><span id="txt-queue">Sin descargas activas</span></div>
+      </div>
+    </nav>
+
+    <section id="content">
+      <div id="banners"></div>
+      <div id="scroll">
+        <div class="view" id="view-audio"></div>
+        <div class="view" id="view-video"></div>
+        <div class="view" id="view-queue"></div>
+        <div class="view" id="view-history"></div>
+        <div class="view" id="view-settings"></div>
+      </div>
+    </section>
+  </div>
+
+  <div id="dialogs"></div>
+  <div id="toasts"></div>
+  <div id="tip" role="tooltip"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-"""Crea lo que se publica de Onitune con `flet pack`.
+"""Crea lo que se publica de Onitune con PyInstaller.
 
 Uso:   python build.py
 Resultado en dist/:
@@ -7,12 +7,13 @@ Resultado en dist/:
   - Onitune-Setup-X.Y.Z.exe      instalador (necesita Inno Setup)
   - SHA256SUMS.txt               huellas de todo lo anterior
 
-Necesita:  pip install -r requirements-build.txt  (con Python 3.13; en 3.15 flet-cli no se instala)
+Necesita:  pip install -r requirements-build.txt  (con Python 3.13)
            winget install JRSoftware.InnoSetup  (solo para el instalador)
 
-`flet pack` usa PyInstaller por dentro, mete la ventana de Flet en el
-ejecutable y le pone nuestro nombre e icono (también en la barra de tareas).
-yt-dlp y ffmpeg NO van dentro: la app los descarga sola la primera vez, así
+PyInstaller junta Python, pywebview y la interfaz (onitune/ui/web) en el
+ejecutable y le pone nuestro nombre, icono y datos de versión.
+La ventana usa el navegador Edge (WebView2) que ya trae Windows: no va dentro.
+yt-dlp y ffmpeg tampoco: la app los descarga sola la primera vez, así
 yt-dlp se puede actualizar sin volver a crear el ejecutable.
 """
 
@@ -28,13 +29,18 @@ from onitune import APP_NAME, APP_VERSION
 ROOT = Path(__file__).resolve().parent
 IS_WINDOWS = sys.platform == "win32"
 
-# Módulos que están instalados para desarrollar pero la app no usa al ejecutarse.
-# Sin esto el ejecutable pesaba más del doble.
-EXCLUDE = ["PIL", "yaml", "flet.testing", "flet_cli"]
+# Módulos que están instalados para desarrollar pero la app no usa al ejecutarse
+EXCLUDE = ["PIL", "tkinter", "unittest", "pydoc", "webview.platforms.qt", "webview.platforms.cef",
+           "webview.platforms.gtk", "webview.platforms.cocoa", "webview.platforms.android"]
+if not IS_WINDOWS:
+    EXCLUDE = [m for m in EXCLUDE if m != "webview.platforms.gtk"]
 
+# Archivos que van dentro del ejecutable (origen:destino)
+DATA = ["assets:assets", "onitune/ui/web:onitune/ui/web", "LICENSE:.", "THIRD_PARTY_LICENSES.md:."]
 
 DIST = ROOT / "dist"
 FOLDER_DIST = ROOT / "build" / "carpeta"  # aquí queda la versión "en carpeta"
+VERSION_FILE = ROOT / "build" / "version_info.txt"
 
 # Inno Setup (crea el instalador). winget lo instala en la carpeta del usuario.
 ISCC_PATHS = [
@@ -44,26 +50,55 @@ ISCC_PATHS = [
 ]
 
 
+def write_version_file() -> None:
+    """Datos que Windows muestra en Propiedades > Detalles del .exe."""
+    nums = tuple(int(x) for x in APP_VERSION.split(".")) + (0,)
+    texts = {
+        "CompanyName": "angelqqi",
+        "FileDescription": f"{APP_NAME} - descarga audio y video de YouTube",
+        "FileVersion": f"{APP_VERSION}.0",
+        "InternalName": APP_NAME,
+        "LegalCopyright": "Copyright (c) 2026 angelqqi - Licencia MIT",
+        "OriginalFilename": f"{APP_NAME}.exe",
+        "ProductName": APP_NAME,
+        "ProductVersion": APP_VERSION,
+    }
+    strings = ",\n          ".join(f"StringStruct({k!r}, {v!r})" for k, v in texts.items())
+    VERSION_FILE.parent.mkdir(parents=True, exist_ok=True)
+    VERSION_FILE.write_text(
+        f"""VSVersionInfo(
+  ffi=FixedFileInfo(filevers={nums}, prodvers={nums}, mask=0x3f, flags=0x0, OS=0x40004,
+                    fileType=0x1, subtype=0x0, date=(0, 0)),
+  kids=[
+    StringFileInfo([StringTable('040904B0', [
+          {strings}])]),
+    VarFileInfo([VarStruct('Translation', [1033, 1200])])
+  ]
+)
+""",
+        encoding="utf-8",
+    )
+
+
 def pack(onedir: bool, distpath: Path) -> None:
-    """Empaqueta la app con `flet pack`: un solo archivo o una carpeta (onedir)."""
-    flet = Path(sys.executable).parent / ("flet.exe" if IS_WINDOWS else "flet")
+    """Empaqueta la app con PyInstaller: un solo archivo o una carpeta (onedir)."""
     args = [
-        str(flet), "pack", "main.py",
-        "--distpath", str(distpath),
+        sys.executable, "-m", "PyInstaller", "main.py",
+        "--noconfirm", "--clean", "--windowed",
+        "--onedir" if onedir else "--onefile",
         "--name", APP_NAME,
-        "--icon", "assets/icon.ico" if IS_WINDOWS else "assets/icon.png",
-        "--product-name", APP_NAME,
-        "--file-description", f"{APP_NAME} - descarga audio y video de YouTube",
-        "--product-version", APP_VERSION,
-        "--file-version", f"{APP_VERSION}.0",
-        "--company-name", "angelqqi",
-        "--copyright", "Copyright (c) 2026 angelqqi - Licencia MIT",
-        "--add-data", "assets:assets", "LICENSE:.", "THIRD_PARTY_LICENSES.md:.",
-        "-y",
+        "--icon", str(ROOT / "assets" / ("icon.ico" if IS_WINDOWS else "icon.png")),
+        "--distpath", str(distpath),
+        "--workpath", str(ROOT / "build" / ("pyi-carpeta" if onedir else "pyi-archivo")),
+        "--specpath", str(ROOT / "build"),
+        "--log-level", "WARN",
     ]
-    if onedir:
-        args.append("--onedir")
-    args.append("--")  # lo que sigue va directo a PyInstaller
+    if IS_WINDOWS:
+        args += ["--version-file", str(VERSION_FILE)]
+    for item in DATA:
+        source, dest = item.split(":")
+        # Ruta completa (el .spec queda en build/) y el separador del sistema: ";" en Windows por la "D:"
+        args += ["--add-data", f"{ROOT / source}{os.pathsep}{dest}"]
     for module in EXCLUDE:
         args += ["--exclude-module", module]
     print(" ".join(args))
@@ -108,6 +143,8 @@ def clean(folder: Path) -> None:
 
 def main() -> None:
     clean(DIST)
+    if IS_WINDOWS:
+        write_version_file()
 
     # 1. Un solo archivo: Onitune.exe (se descomprime solo cada vez que se abre)
     pack(onedir=False, distpath=DIST)

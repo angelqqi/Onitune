@@ -1,1 +1,1 @@
-"""Interfaz gráfica de Onitune (hecha con Flet)."""
+"""Interfaz gráfica de Onitune: una página web (web/) mostrada con pywebview."""

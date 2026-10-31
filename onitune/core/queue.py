@@ -398,4 +398,4 @@ class DownloadQueue:
                 text = f"{done} descarga{'s' if done != 1 else ''} lista{'s' if done != 1 else ''}"
                 if errors:
                     text += f", {errors} con error"
-                notify("Onitune: descargas terminadas", text)
+                notify("Descargas terminadas", text)
