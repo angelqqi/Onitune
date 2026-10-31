@@ -13,6 +13,7 @@ Cómo está armada:
 import base64
 import json
 import os
+import sys
 import threading
 import time
 from pathlib import Path
@@ -21,7 +22,7 @@ from typing import Any, Callable, Optional
 import webview
 
 from .. import APP_NAME
-from ..core import clipboard, deps, paths, updates, ytdlp
+from ..core import clipboard, deps, i18n, paths, updates, ytdlp
 from ..core.history import History, HistoryEntry
 from ..core.queue import DOWNLOADING, PROCESSING, DownloadItem, DownloadQueue
 from ..core.settings import Settings
@@ -64,7 +65,8 @@ def entry_dict(entry: HistoryEntry) -> dict:
         "id": entry.id,
         "title": entry.title,
         "kind": entry.kind,
-        "label": entry.label,
+        # Se vuelve a armar desde las opciones para que salga en el idioma actual
+        "label": ytdlp.describe_options(entry.options) if entry.options.get("kind") else entry.label,
         "size": ytdlp.fmt_size(entry.size),
         "date": entry.date,
         "exists": entry.file_exists,
@@ -117,6 +119,7 @@ class Bridge:
 class OnituneApp:
     def __init__(self):
         self.settings = Settings.load()
+        i18n.load(self.settings.language)
         self.history = History()
         self.queue: Optional[DownloadQueue] = None
         self.bridge = Bridge()
@@ -143,7 +146,16 @@ class OnituneApp:
         )
         self.bridge.window = self.window
         self.window.events.closing += self._on_closing
-        icon = paths.assets_dir() / "icon.ico"
+        if sys.platform.startswith("linux"):
+            try:
+                from gi.repository import GLib
+
+                # Nombre con el que el escritorio reconoce la ventana: coincide con
+                # onitune.desktop del paquete .deb, así la barra muestra el icono correcto
+                GLib.set_prgname("onitune")
+            except Exception:
+                pass
+        icon = paths.assets_dir() / ("icon.ico" if sys.platform == "win32" else "icon.png")
         webview.start(icon=str(icon) if icon.exists() else None, debug=bool(os.environ.get("ONITUNE_DEBUG")))
 
     def icon_data(self) -> str:

@@ -4,6 +4,7 @@ import ctypes
 import shutil
 import subprocess
 import sys
+import threading
 
 from . import proc
 
@@ -37,6 +38,37 @@ def _windows_text() -> str:
         user32.CloseClipboard()
 
 
+def _gtk_text() -> str:
+    """Lee el portapapeles con GTK, el mismo que usa la ventana en Linux.
+
+    Ubuntu no trae wl-paste, xclip ni xsel, pero GTK sí está (la ventana lo
+    necesita). GTK solo se puede usar desde su hilo principal: desde otro hilo
+    se le pide con GLib.idle_add y se espera la respuesta.
+    """
+    if "gi.repository.Gtk" not in sys.modules:
+        return ""  # sin ventana GTK abierta (por ejemplo, en los scripts de prueba)
+    from gi.repository import Gdk, GLib, Gtk
+
+    def read() -> str:
+        return Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD).wait_for_text() or ""
+
+    if threading.current_thread() is threading.main_thread():
+        return read()
+    result = {"text": ""}
+    done = threading.Event()
+
+    def on_main() -> bool:
+        try:
+            result["text"] = read()
+        finally:
+            done.set()
+        return False  # no repetir
+
+    GLib.idle_add(on_main)
+    done.wait(2)
+    return result["text"]
+
+
 def _linux_text() -> str:
     # Wayland (wl-paste) o X11 (xclip / xsel), lo que esté instalado
     for args in (["wl-paste", "--no-newline"], ["xclip", "-selection", "clipboard", "-o"], ["xsel", "-b", "-o"]):
@@ -45,7 +77,7 @@ def _linux_text() -> str:
                 return proc.run(args, timeout=2).stdout or ""
             except (OSError, subprocess.SubprocessError):
                 return ""
-    return ""
+    return _gtk_text()  # ninguno instalado (lo normal en Ubuntu)
 
 
 def get_text() -> str:

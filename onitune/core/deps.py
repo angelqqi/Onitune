@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 from . import paths, proc
+from .i18n import t
 
 # progress(fraccion 0..1 o None si no se sabe, bytes_descargados, bytes_totales)
 ProgressFn = Callable[[Optional[float], int, int], None]
@@ -127,7 +128,7 @@ def download_ffmpeg(progress: ProgressFn) -> None:
     finally:
         archive.unlink(missing_ok=True)
     if not paths.ffmpeg_path().exists():
-        raise RuntimeError("No se encontró ffmpeg dentro del paquete descargado.")
+        raise RuntimeError(t("setup.no_ffmpeg"))
 
 
 # ---------------------------------------------------------------- versiones
@@ -135,40 +136,40 @@ def download_ffmpeg(progress: ProgressFn) -> None:
 
 def ytdlp_version() -> str:
     if not ytdlp_ready():
-        return "no instalado"
+        return t("ytdlp.not_installed")
     try:
-        return proc.run([str(paths.ytdlp_path()), "--version"], timeout=30).stdout.strip() or "desconocida"
+        return proc.run([str(paths.ytdlp_path()), "--version"], timeout=30).stdout.strip() or t("ytdlp.unknown_version")
     except Exception:
-        return "desconocida"
+        return t("ytdlp.unknown_version")
 
 
 def ffmpeg_version() -> str:
     location = ffmpeg_location()
     if location is None:
-        return "no instalado"
+        return t("ytdlp.not_installed")
     exe = str(paths.ffmpeg_path()) if location else "ffmpeg"
     try:
         first_line = proc.run([exe, "-version"], timeout=30).stdout.splitlines()[0]
         # "ffmpeg version N-12345-g... Copyright ..." -> "N-12345-g..."
         return first_line.split(" ")[2] if first_line.startswith("ffmpeg version") else first_line
     except Exception:
-        return "desconocida"
+        return t("ytdlp.unknown_version")
 
 
 def update_ytdlp() -> tuple[bool, str]:
     """Actualiza yt-dlp. Devuelve (todo_bien, mensaje_para_el_usuario)."""
     if not ytdlp_ready():
-        return False, "yt-dlp no está instalado"
+        return False, t("ytdlp.update_missing")
     try:
         result = proc.run([str(paths.ytdlp_path()), "-U"], timeout=300)
     except Exception as exc:
-        return False, f"No se pudo actualizar: {exc}"
+        return False, t("ytdlp.update_error", error=exc)
     text = (result.stdout + result.stderr).lower()
     if "up to date" in text:
-        return True, "Ya está en la última versión"
+        return True, t("ytdlp.up_to_date")
     if "updated yt-dlp" in text:
-        return True, "Actualizado a la última versión"
+        return True, t("ytdlp.updated")
     if result.returncode == 0:
-        return True, "Comprobado"
+        return True, t("ytdlp.checked")
     last = (result.stderr or result.stdout).strip().splitlines()
-    return False, last[-1] if last else "No se pudo actualizar"
+    return False, last[-1] if last else t("ytdlp.update_failed")

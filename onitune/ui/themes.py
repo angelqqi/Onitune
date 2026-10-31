@@ -11,6 +11,8 @@ Los colores intermedios (selección suave, bordes) se calculan allí con color-m
 
 from dataclasses import asdict, dataclass
 
+from ..core.i18n import t
+
 
 @dataclass(frozen=True)
 class Palette:
@@ -66,7 +68,7 @@ THEMES: list[Palette] = [
             "#575279", "#6E6A86", "#286983", "#FFFFFF", "#907AA9", "#3D7E88", "#B26F12", "#907AA9", "#B4637A"),
 ]
 
-BY_ID = {t.id: t for t in THEMES}
+BY_ID = {p.id: p for p in THEMES}
 DEFAULT = "dracula"
 
 
@@ -77,5 +79,10 @@ def get(theme_id: str) -> Palette:
 
 
 def to_dict(p: Palette) -> dict:
-    """La paleta como diccionario, para mandarla a la página (web/app.js)."""
-    return asdict(p)
+    """La paleta como diccionario, para mandarla a la página (web/app.js).
+
+    Algunos nombres se traducen ("theme.<id>" en los archivos de idioma); el resto queda igual.
+    """
+    data = asdict(p)
+    data["name"] = t(f"theme.{p.id}", default=p.name)
+    return data

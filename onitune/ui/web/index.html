@@ -16,15 +16,16 @@
         <img id="logo" alt="">
         <div>
           <div class="brand-name">Onitune</div>
-          <div class="brand-sub">Audio y video de YouTube</div>
+          <div class="brand-sub" data-t="rail.subtitle"></div>
         </div>
       </div>
       <div id="destinations"></div>
       <div class="rail-space"></div>
+      <!-- data-t="clave": app.js pone el texto en el idioma elegido -->
       <div class="status-card">
-        <div class="status-line"><span class="dot" id="dot-ytdlp"></span><span id="txt-ytdlp">yt-dlp listo</span></div>
-        <div class="status-line"><span class="dot ok"></span><span>ffmpeg listo</span></div>
-        <div class="status-line"><span class="dot info"></span><span id="txt-queue">Sin descargas activas</span></div>
+        <div class="status-line"><span class="dot" id="dot-ytdlp"></span><span id="txt-ytdlp" data-t="rail.ytdlp_ok"></span></div>
+        <div class="status-line"><span class="dot ok"></span><span data-t="rail.ffmpeg_ok"></span></div>
+        <div class="status-line"><span class="dot info"></span><span id="txt-queue" data-t="rail.idle"></span></div>
       </div>
     </nav>
 

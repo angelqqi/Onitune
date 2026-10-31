@@ -20,6 +20,7 @@ from typing import Callable, Optional
 
 from . import paths, proc, ytdlp
 from .history import History, HistoryEntry
+from .i18n import t
 from .notify import notify
 from .settings import Settings
 
@@ -356,7 +357,7 @@ class DownloadQueue:
             self._finish(item)
         else:
             item.status = ERROR
-            item.error = ytdlp.friendly_error(last_error or "La descarga falló")
+            item.error = ytdlp.friendly_error(last_error or t("error.download_failed"))
             item.speed = item.eta = ""
 
         self.save()
@@ -385,7 +386,7 @@ class DownloadQueue:
         )
         self._finished_in_session += 1
         if self.settings.notify_each:
-            notify("Descarga terminada", item.title)
+            notify(t("notify.done"), item.title)
 
     def _maybe_queue_done(self) -> None:
         if self._closing or self._finished_in_session == 0:
@@ -395,7 +396,7 @@ class DownloadQueue:
             self._finished_in_session = 0
             if self.settings.notify_queue_done:
                 errors = self.count(ERROR)
-                text = f"{done} descarga{'s' if done != 1 else ''} lista{'s' if done != 1 else ''}"
+                text = t("notify.ready", n=done)
                 if errors:
-                    text += f", {errors} con error"
-                notify("Descargas terminadas", text)
+                    text = t("notify.ready_errors", ready=text, errors=errors)
+                notify(t("notify.all_done"), text)

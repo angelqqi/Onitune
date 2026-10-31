@@ -36,7 +36,7 @@ if not IS_WINDOWS:
     EXCLUDE = [m for m in EXCLUDE if m != "webview.platforms.gtk"]
 
 # Archivos que van dentro del ejecutable (origen:destino)
-DATA = ["assets:assets", "onitune/ui/web:onitune/ui/web", "LICENSE:.", "THIRD_PARTY_LICENSES.md:."]
+DATA = ["assets:assets", "onitune/ui/web:onitune/ui/web", "onitune/idiomas:onitune/idiomas", "LICENSE:.", "THIRD_PARTY_LICENSES.md:."]
 
 DIST = ROOT / "dist"
 FOLDER_DIST = ROOT / "build" / "carpeta"  # aquí queda la versión "en carpeta"
@@ -85,6 +85,8 @@ def pack(onedir: bool, distpath: Path) -> None:
     args = [
         sys.executable, "-m", "PyInstaller", "main.py",
         "--noconfirm", "--clean", "--windowed",
+        # Sin UPX: si está instalado, PyInstaller comprime el .exe y los antivirus lo marcan más
+        "--noupx",
         "--onedir" if onedir else "--onefile",
         "--name", APP_NAME,
         "--icon", str(ROOT / "assets" / ("icon.ico" if IS_WINDOWS else "icon.png")),

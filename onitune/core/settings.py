@@ -21,6 +21,9 @@ class Settings:
     cookies_browser: str = "firefox"
     cookies_file: str = ""
 
+    # Idioma: "en" por defecto; "" = automático (el del sistema), o un código: "es", "pt"... (ver core/i18n.py)
+    language: str = "en"
+
     # Tema de colores (ver onitune/ui/themes.py)
     theme: str = "dracula"
 

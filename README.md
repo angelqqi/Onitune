@@ -1,169 +1,176 @@
-<p align="center"><img src="assets/icon.png" width="128" alt="Icono de Onitune: un onigiri con forma de botón de play"></p>
+<p align="center"><img src="assets/icon.png" width="128" alt="Onitune icon: an onigiri shaped like a play button"></p>
 
 <h1 align="center">Onitune</h1>
 
 <p align="center">
-  <b>Descarga música y video de YouTube con una app bonita, simple y gratis.</b><br>
-  MP3 o FLAC con portada y artista correctos · Video hasta 4K · 14 temas de color · Sin anuncios
+  <b>A beautiful, simple and free app to download music and video from YouTube.</b><br>
+  MP3 or FLAC with the right cover and artist · Video up to 4K · 14 color themes · No ads
 </p>
 
 <p align="center">
-  <a href="https://github.com/angelqqi/Onitune/releases/latest"><img src="https://img.shields.io/github/v/release/angelqqi/Onitune?label=versi%C3%B3n&color=bd93f9" alt="Última versión"></a>
-  <a href="https://github.com/angelqqi/Onitune/releases"><img src="https://img.shields.io/github/downloads/angelqqi/Onitune/total?label=descargas&color=ff79c6" alt="Descargas"></a>
-  <img src="https://img.shields.io/badge/Windows%20%7C%20Linux-50fa7b?label=funciona%20en" alt="Windows y Linux">
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/angelqqi/Onitune?label=licencia&color=8be9fd" alt="Licencia MIT"></a>
+  <a href="https://github.com/angelqqi/Onitune/releases/latest"><img src="https://img.shields.io/github/v/release/angelqqi/Onitune?label=version&color=bd93f9" alt="Latest version"></a>
+  <a href="https://github.com/angelqqi/Onitune/releases"><img src="https://img.shields.io/github/downloads/angelqqi/Onitune/total?label=downloads&color=ff79c6" alt="Downloads"></a>
+  <img src="https://img.shields.io/badge/Windows%20%7C%20Linux-50fa7b?label=runs%20on" alt="Windows and Linux">
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/angelqqi/Onitune?label=license&color=8be9fd" alt="MIT license"></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/angelqqi/Onitune/releases/latest"><b>⬇️ Descargar para Windows</b></a>
-  &nbsp;·&nbsp; sin instalar Python · sin permisos de administrador
+  <a href="https://github.com/angelqqi/Onitune/releases/latest"><b>⬇️ Download for Windows</b></a>
+  &nbsp;·&nbsp; no Python needed · no admin rights<br>
+  <a href="README.es.md">Leer en español</a>
 </p>
 
-<p align="center"><img src="docs/capturas/portada.png" alt="Onitune analizando un video: muestra las calidades disponibles, de 144p a 4K, en tema oscuro y claro"></p>
+<p align="center"><img src="docs/capturas/portada.png" alt="Onitune analyzing a video: it shows the available qualities, from 144p to 4K, in a dark and a light theme"></p>
 
-## Qué hace
+## Features
 
-- **Audio:** MP3, M4A, OPUS, FLAC o WAV, con portada y metadatos. Se puede pegar un enlace o buscar por nombre y elegir entre los resultados.
-- **Búsqueda en YouTube Music:** al buscar por nombre, busca canciones en YouTube Music para que el archivo quede con artista y álbum correctos. Se puede apagar en Ajustes.
-- **Portada cuadrada:** recorta la miniatura de YouTube para que la portada quede cuadrada, como en YouTube Music. Se elige en Ajustes si se aplica a canciones de YouTube Music, a todo el audio, al video o a nada.
-- **Video:** analiza el enlace y muestra solo las resoluciones que ese video tiene. MP4 o MKV, con subtítulos incrustados o en un archivo aparte.
-- **Playlists:** muestra la lista para seleccionar qué videos descargar.
-- **Descargas:** varias a la vez; cada una se puede pausar, reanudar, cancelar o reintentar. Si se cierra la app, continúan al abrirla de nuevo.
-- **Historial:** buscar, filtrar, abrir el archivo o la carpeta, volver a descargar y borrar (de a uno o todo de una vez).
-- **Temas:** 14 temas de color (Drácula, Alucard, Tokyo Night, Catppuccin, Nord, Gruvbox, Rosé Pine, Solarized…) que se eligen en Ajustes.
-- **Extras:** detecta enlaces de YouTube copiados, usa cookies del navegador (para videos con restricción de edad), muestra avisos del sistema y avisa cuando hay una versión nueva de Onitune.
-
-## Capturas
-
-### Buscar música por nombre
-Escribe un artista o una canción y elige entre los resultados de YouTube Music. El archivo queda con portada, artista y álbum.
-
-<img src="docs/capturas/audio.png" alt="Pestaña Audio: búsqueda con resultados, formatos MP3, M4A, OPUS, FLAC y WAV">
-
-### Video en la calidad que quieras
-Al pegar un enlace, Onitune muestra solo las calidades disponibles para ese video (hasta 4K y 60 fps).
-
-<img src="docs/capturas/video.png" alt="Pestaña Video: calidades disponibles de 144p a 2160p 4K, formato MP4 o MKV y subtítulos">
-
-### Varias descargas a la vez
-Cada descarga se puede pausar, reanudar o cancelar. Si se cierra Onitune antes de que terminen, continúan solas al abrirlo de nuevo.
-
-<img src="docs/capturas/descargas.png" alt="Pestaña Descargas: dos descargando con barra de progreso, una en pausa, una en espera y una completada">
-
-### Copias un enlace y la app te avisa
-<img src="docs/capturas/portapapeles.png" alt="Aviso de enlace de YouTube copiado con botones Video y Audio">
-
-### Historial
-Busca lo que ya bajaste, ábrelo, abre su carpeta o vuelve a descargarlo.
-
-<img src="docs/capturas/historial.png" alt="Pestaña Historial con descargas de audio y video, filtros por tipo y fecha">
-
-### 14 temas de color
-<img src="docs/capturas/temas.png" alt="La misma pantalla en 9 de los 14 temas: Drácula, Tokyo Night, Catppuccin Mocha, Nord, Rosé Pine, Gruvbox, Alucard, Catppuccin Latte y Rosé Pine Dawn">
+- **Audio:** MP3, M4A, OPUS, FLAC or WAV, with cover art and tags. Paste a link or search by name.
+- **YouTube Music search:** songs come out with the right artist and album. A square cover is cropped from the thumbnail, just like in YouTube Music.
+- **Video:** shows only the qualities each video really has (up to 4K and 60 fps). MP4 or MKV, with subtitles.
+- **Playlists:** pick which videos to download.
+- **Downloads:** several at once; pause, resume, cancel or retry. They continue if you close the app.
+- **History:** search, open the file or folder, download again or clear it all.
+- **Languages:** English, Spanish and Portuguese. English by default; change it in Settings (or pick "Automatic" to follow the system language).
+- **Extras:** 14 themes (Dracula, Tokyo Night, Catppuccin, Nord, Gruvbox, Rosé Pine…), notices when you copy a YouTube link, browser cookies for age-restricted videos and update alerts.
 
 <details>
-<summary>Más capturas (Ajustes, tema claro)</summary>
+<summary><b>📸 Screenshots</b></summary>
+<br>
 
-<img src="docs/capturas/ajustes.png" alt="Pestaña Ajustes: carpetas de descarga, cookies y selector de temas">
+| Search music by name | Pick the video quality |
+|---|---|
+| <img src="docs/capturas/audio.png" alt="Audio tab: search results and formats"> | <img src="docs/capturas/video.png" alt="Video tab: qualities from 144p to 4K"> |
+| **Several downloads at once** | **History** |
+| <img src="docs/capturas/descargas.png" alt="Downloads tab with progress bars"> | <img src="docs/capturas/historial.png" alt="History tab with filters"> |
+| **Settings** | **Copied link notice** |
+| <img src="docs/capturas/ajustes.png" alt="Settings tab: folders, cookies and themes"> | <img src="docs/capturas/portapapeles.png" alt="Notice for a copied YouTube link"> |
 
-<img src="docs/capturas/video-claro.png" alt="Pestaña Video con el tema claro Catppuccin Latte">
+**14 color themes**
+
+<img src="docs/capturas/temas.png" alt="The same screen in 9 of the 14 themes">
+
+Screenshots use freely licensed content: open movies by [Blender](https://studio.blender.org/films/) and music by [NoCopyrightSounds](https://ncs.io).
 
 </details>
 
-> Las capturas usan contenido de licencia libre: películas abiertas de [Blender](https://studio.blender.org/films/) y música de [NoCopyrightSounds](https://ncs.io).
+## Download
 
-## Créditos
+Get it from the [latest release](https://github.com/angelqqi/Onitune/releases/latest). None of these need Python or admin rights:
 
-- **Idea, diseño y dirección:** [angelqqi](https://github.com/angelqqi).
-- **Código:** escrito con ayuda de inteligencia artificial ([Claude](https://claude.com), de Anthropic), siguiendo las indicaciones y decisiones de angelqqi.
-
-## Licencia y aviso legal
-
-- El código de Onitune tiene licencia **MIT** (ver [LICENSE](LICENSE)): se puede usar, modificar y compartir libremente, manteniendo el aviso de copyright.
-- Los programas de terceros que usa (yt-dlp, FFmpeg, pywebview…) y sus licencias están en [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md). yt-dlp y FFmpeg **no** van incluidos: la app los descarga de sus páginas oficiales.
-- Onitune **no está afiliado** a YouTube ni a Google. "YouTube" es una marca de Google LLC y se menciona solo para describir para qué sirve la app.
-- Descargar contenido puede ir contra los términos de YouTube o los derechos de autor de quien lo creó. **La app debe usarse solo con contenido que se tenga derecho a guardar** (por ejemplo, videos propios o contenido con licencia libre). Cada persona es responsable de cómo la usa.
-
-## Descargar
-
-En la [última versión (Releases)](https://github.com/angelqqi/Onitune/releases/latest) hay tres formas para Windows. Ninguna necesita Python ni permisos de administrador:
-
-| Archivo | Para qué |
+| File | What it is |
 |---|---|
-| `Onitune-Setup-X.Y.Z.exe` | **Instalador** (recomendado): crea el acceso en el Menú Inicio y se desinstala desde la configuración de Windows. |
-| `Onitune-X.Y.Z-windows.zip` | **Portable**: se descomprime la carpeta y se abre `Onitune.exe`. Es la que abre más rápido. |
-| `Onitune.exe` | **Un solo archivo**: se abre directamente, sin instalar. Tarda un poco más en abrir porque se descomprime cada vez. |
+| `Onitune-Setup-X.Y.Z.exe` | **Installer** (recommended): adds Onitune to the Start menu and uninstalls from Windows settings. |
+| `Onitune-X.Y.Z-windows.zip` | **Portable**: unzip the folder and open `Onitune.exe`. Opens the fastest. |
+| `Onitune.exe` | **Single file**: runs without installing, but opens a bit slower. |
 
-> Windows puede mostrar el aviso "Windows protegió su PC" porque el programa no está firmado. Para abrirlo: **Más información → Ejecutar de todas formas**.
->
-> Las huellas SHA256 de todos los archivos están en `SHA256SUMS.txt` y en las notas de cada Release.
->
-> **Linux:** el ejecutable para Linux llegará pronto. Mientras tanto, se puede usar con Python (ver abajo).
+On first launch, Onitune downloads **yt-dlp** and **ffmpeg** from their official sites by itself.
 
-## Cómo abrirla
+**Linux (Debian, Ubuntu, Mint...):** download `onitune_X.Y.Z_all.deb` and install it with `sudo apt install ./onitune_X.Y.Z_all.deb` (apt adds what it needs). Then open Onitune from the app menu or by typing `onitune`. On other distros, run it with Python (see below).
+
+### "Windows protected your PC"?
+
+Windows shows this warning for apps that are not digitally signed, which is common for small free projects. To open Onitune, click **More info → Run anyway**.
+
+Some antivirus programs also flag apps built with PyInstaller by mistake. Onitune is open source, so you can:
+- check the file with the SHA256 hashes in `SHA256SUMS.txt` (also in each release's notes),
+- read the code or build it yourself (see below),
+- and if your antivirus flags it, please [open an issue](https://github.com/angelqqi/Onitune/issues) so it can be reported as a false positive.
+
+## Run with Python
 
 | | Windows | Linux |
 |---|---|---|
-| Con Python 3.13 | Doble clic en `Onitune.bat` | `./Onitune.sh` |
-| Sin Python | [`Onitune.exe`](https://github.com/angelqqi/Onitune/releases/latest) | Próximamente |
+| With Python 3.13 | Double-click `Onitune.bat` | `./Onitune.sh` |
 
-La primera vez, la app descarga sola **yt-dlp** y **ffmpeg** a su carpeta. No hay que instalar nada ni pedir permisos de administrador.
+The launchers update the code (`git pull`), create a `.venv` the first time, install `requirements.txt` and open the app.
 
-Los lanzadores (`Onitune.bat` / `Onitune.sh`) hacen esto:
-1. `git pull` para traer la última versión del programa.
-2. Crean un entorno de Python (`.venv`) la primera vez, con Python 3.13 si está instalado.
-3. Instalan lo que hay en `requirements.txt`.
-4. Abren la app.
+The window uses the system's browser engine: on Windows, Edge WebView2 (already included in Windows 10 and 11). On Linux it needs GTK and WebKit; on Ubuntu/Debian: `sudo apt install python3-venv python3-gi gir1.2-webkit2-4.1`. Tested on Ubuntu 26.04 with its own Python 3.14.
 
-> **¿Por qué Python 3.13?** Es la versión con la que se prueba la app. En Windows se puede tener 3.13 al lado de otra versión: `py install 3.13`.
->
-> La ventana usa el navegador del sistema: en Windows, Edge WebView2 (ya viene con Windows 10 y 11). En Linux necesita GTK y WebKit; en Ubuntu/Debian: `sudo apt install python3-gi gir1.2-webkit2-4.1`.
+<details>
+<summary><b>🌍 Add a language</b></summary>
+<br>
 
-## Crear el ejecutable
+Adding a language only takes translating one file, no code needed:
+
+1. Copy `onitune/idiomas/en.json` and name it with the language code, for example `fr.json`.
+2. Translate the texts on the right. Leave as they are: the keys on the left, the words in braces (`{n}`, `{text}`…) and the `"one"` / `"other"` names (singular and plural).
+3. Set `_name` to the language's own name (`Français`) and `_decimal` to its decimal separator.
+4. Open the app, pick the language in **Settings → Language** and check how it looks. Any missing text shows up in Spanish.
+
+Then send it as a pull request, or attach the file to an [issue](https://github.com/angelqqi/Onitune/issues).
+
+</details>
+
+<details>
+<summary><b>For developers</b>: build, data folders and code layout</summary>
+
+### Build the executable
 
 ```bash
 .venv\Scripts\python -m pip install -r requirements-build.txt   # Windows
-winget install JRSoftware.InnoSetup                              # solo para el instalador
+winget install JRSoftware.InnoSetup                              # only for the installer
 python build.py
 ```
 
-El resultado queda en `dist/`: el instalador, el `.zip` portable, el `.exe` de un solo archivo y `SHA256SUMS.txt`. Nada de eso necesita Python. yt-dlp **no** va dentro a propósito: así se actualiza solo y no hay que volver a crear el ejecutable cada vez que YouTube cambia algo.
+Everything ends up in `dist/`: the installer, the portable `.zip`, the single `.exe` and `SHA256SUMS.txt`. yt-dlp is **not** bundled on purpose: it updates itself, so there's no need to rebuild every time YouTube changes something.
 
-## Dónde guarda las cosas
+### Where it saves things
 
-| Qué | Windows | Linux |
+| What | Windows | Linux |
 |---|---|---|
-| Ajustes, descargas pendientes, historial, yt-dlp y ffmpeg | `%LOCALAPPDATA%\Onitune` | `~/.local/share/onitune` |
-| Archivos descargados (por defecto) | `Música\Onitune\Audio` y `Videos\Onitune\Video` | `~/Music/Onitune/...` y `~/Videos/Onitune/...` |
+| Settings, pending downloads, history, yt-dlp and ffmpeg | `%LOCALAPPDATA%\Onitune` | `~/.local/share/onitune` |
+| Downloaded files (default, can be changed in Settings) | `Music\Onitune\Audio` and `Videos\Onitune\Video` | `~/Music/Onitune/...` and `~/Videos/Onitune/...` |
 
-Las carpetas de descarga se pueden cambiar en **Ajustes**.
-
-## Cómo está organizado el código
+### Code layout
 
 ```
-main.py                 Punto de entrada: abre la ventana
+main.py                 Entry point: opens the window
 onitune/
-  core/                 La lógica, sin nada de interfaz
-    paths.py            Dónde se guarda cada cosa
-    settings.py         Ajustes (settings.json)
-    deps.py             Descarga y actualiza yt-dlp y ffmpeg
-    ytdlp.py            Habla con yt-dlp: buscar, analizar y armar el comando de descarga
-    queue.py            La cola de descargas: lanza yt-dlp, lee el progreso, pausa y cancela
-    history.py          Historial (history.json)
-    updates.py          Revisa en GitHub si hay una versión nueva de Onitune
-    notify.py           Avisos de Windows/Linux
-    proc.py             Ejecutar programas sin abrir consolas, abrir archivos y carpetas
-    clipboard.py        Leer el portapapeles (Windows y Linux)
-  ui/                   La interfaz: una página web mostrada con pywebview
-    app.py              Abre la ventana y le avisa a la página de los cambios (cola, historial, avisos)
-    api.py              Las funciones de Python que la página puede usar (buscar, analizar, descargar...)
-    themes.py           Los temas de color (para agregar uno, se suma a la lista)
-    web/                La página: index.html, style.css (diseño) y app.js (pestañas, diálogos, avisos)
-      fonts/            Iconos de Material
-tools/make_icon.py      Dibuja el icono (assets/icon.png, assets/icon.ico)
-build.py                Crea el ejecutable
+  core/                 The logic, no interface code
+    paths.py            Where each thing is saved
+    settings.py         Settings (settings.json)
+    deps.py             Downloads and updates yt-dlp and ffmpeg
+    ytdlp.py            Talks to yt-dlp: search, analyze and build the download command
+    queue.py            Download queue: runs yt-dlp, reads progress, pauses and cancels
+    history.py          History (history.json)
+    updates.py          Checks GitHub for a new Onitune version
+    notify.py           System notifications
+    proc.py             Runs programs without console windows, opens files and folders
+    clipboard.py        Reads the clipboard (Windows and Linux)
+    i18n.py             Loads the texts of the chosen language
+  idiomas/              One file per language: es.json, en.json, pt.json
+  ui/                   The interface: a web page shown with pywebview
+    app.py              Opens the window and sends changes to the page (queue, history, notices)
+    api.py              Python functions the page can call (search, analyze, download...)
+    themes.py           Color themes (to add one, add it to the list)
+    web/                The page: index.html, style.css and app.js
+tools/make_icon.py      Draws the icon (assets/icon.png, assets/icon.ico)
+build.py                Builds the executable
 ```
 
-**Idea clave:** `core/` no sabe nada de la interfaz y `ui/` no habla directamente con yt-dlp. Si YouTube cambia algo, normalmente basta con actualizar yt-dlp (botón en Ajustes). Para cambiar cómo se ve algo, basta con tocar `ui/`.
+`core/` knows nothing about the interface, and `ui/` never talks to yt-dlp directly. If YouTube changes something, updating yt-dlp (button in Settings) is usually enough. Searches and downloads run in background threads; `ui/app.py` groups their changes and sends them to the page in batches.
 
-**Hilos:** las búsquedas y descargas corren en otros hilos para que la ventana no se congele. Cuando uno de esos hilos quiere cambiar algo en pantalla, usa `ui_call(page, funcion)` (en `ui/common.py`), que pasa el cambio al hilo de la interfaz.
+Code comments are in Spanish.
+
+</details>
+
+## Credits
+
+- **Idea, design and direction:** [angelqqi](https://github.com/angelqqi).
+- **Code:** written with the help of AI ([Claude](https://claude.com), by Anthropic), following angelqqi's directions and decisions.
+
+<details>
+<summary>A note from the author</summary>
+<br>
+
+I built Onitune in my free time, out of curiosity: I wanted to see what AI is capable of. I'm not a software developer and my programming knowledge is still basic; without that help I couldn't have made this app on my own. If any programmer finds some blasphemy in the code, I apologize in advance.
+
+I don't plan to leave the project behind. Work doesn't let me dedicate myself to it full time, but I keep learning little by little and adding features with Claude's help. Any feedback or advice is welcome. I hope you find it useful.
+
+</details>
+
+## License and legal notice
+
+- Onitune's code is under the **MIT** license (see [LICENSE](LICENSE)). Third-party programs it uses (yt-dlp, FFmpeg, pywebview…) and their licenses are listed in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md). yt-dlp and FFmpeg are **not** bundled: the app downloads them from their official sites.
+- Onitune is **not affiliated** with YouTube or Google. "YouTube" is a trademark of Google LLC and is only mentioned to describe what the app does.
+- Downloading content may go against YouTube's terms or the creator's copyright. **Only use the app with content you have the right to save** (for example, your own videos or freely licensed content). Each person is responsible for how they use it.

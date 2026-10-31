@@ -1,6 +1,7 @@
 """Ayudas para ejecutar programas externos (yt-dlp, ffmpeg) sin abrir consolas."""
 
 import os
+import shutil
 import subprocess
 import sys
 
@@ -34,8 +35,11 @@ def open_path(path: str) -> None:
     """Abre un archivo o carpeta con el programa predeterminado del sistema."""
     if sys.platform == "win32":
         os.startfile(path)  # noqa: S606 - es justo lo que queremos
-    else:
+    elif shutil.which("xdg-open"):
         subprocess.Popen(["xdg-open", path])
+    else:
+        # Sin xdg-utils (sistemas mínimos): gio viene con GLib, que GTK ya necesita
+        subprocess.Popen(["gio", "open", path])
 
 
 def show_in_folder(path: str) -> None:

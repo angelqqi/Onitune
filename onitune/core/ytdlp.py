@@ -11,12 +11,10 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from . import deps, paths, proc
+from .i18n import t
 from .settings import Settings
 
 YOUTUBE_URL = re.compile(r"https?://(www\.|m\.|music\.)?(youtube\.com|youtu\.be)/\S+", re.IGNORECASE)
-
-
-LIVE_ERROR = "Es una transmisión en vivo: no se puede descargar mientras está al aire"
 
 
 class YtdlpError(Exception):
@@ -115,7 +113,7 @@ def fmt_size(size) -> str:
     for unit in ("B", "KB", "MB", "GB"):
         if size < 1024 or unit == "GB":
             text = f"{size:.0f}" if unit in ("B", "KB") or size >= 100 else f"{size:.1f}"
-            return f"{text.replace('.', ',')} {unit}"
+            return f"{text.replace('.', t('_decimal', default='.'))} {unit}"
         size /= 1024
     return ""
 
@@ -130,25 +128,25 @@ def friendly_error(text: str) -> str:
     """Traduce los errores más comunes de yt-dlp a algo entendible."""
     lower = text.lower()
     if "confirm your age" in lower or "age-restricted" in lower or "inappropriate" in lower:
-        return "Video con restricción de edad: requiere cookies (ver Ajustes)"
+        return t("error.age")
     if "sign in to confirm you" in lower and "bot" in lower:
-        return "YouTube pide iniciar sesión: requiere cookies (ver Ajustes)"
+        return t("error.bot")
     if "private video" in lower:
-        return "Video privado: requiere cookies de una cuenta con acceso (ver Ajustes)"
+        return t("error.private")
     if "members-only" in lower or "join this channel" in lower:
-        return "Video solo para miembros: requiere cookies (ver Ajustes)"
+        return t("error.members")
     if "video unavailable" in lower or "not available" in lower:
-        return "El video no está disponible"
+        return t("error.unavailable")
     if "unable to download webpage" in lower or "getaddrinfo" in lower or "timed out" in lower:
-        return "Sin conexión a internet o YouTube no responde"
+        return t("error.offline")
     if "ffmpeg" in lower and "not found" in lower:
-        return "Falta ffmpeg: se instala al volver a abrir la app"
+        return t("error.no_ffmpeg")
     if "unsupported url" in lower:
-        return "Ese enlace no es compatible"
+        return t("error.unsupported")
     text = text.strip()
     if text.startswith("ERROR:"):
         text = text[6:].strip()
-    return text[:200] or "Error desconocido"
+    return text[:200] or t("error.unknown")
 
 
 def _last_error(output: str) -> str:
@@ -176,13 +174,13 @@ def _run_json(args: list[str], timeout: float) -> dict:
     try:
         result = proc.run(args, timeout=timeout)
     except Exception as exc:  # timeout, programa no encontrado...
-        raise YtdlpError(f"No se pudo ejecutar yt-dlp: {exc}") from exc
+        raise YtdlpError(t("error.run", error=exc)) from exc
     if result.returncode != 0 or not result.stdout.strip():
         raise YtdlpError(friendly_error(_last_error(result.stderr or result.stdout)))
     try:
         return json.loads(result.stdout)
     except ValueError as exc:
-        raise YtdlpError("yt-dlp devolvió una respuesta que no se entiende") from exc
+        raise YtdlpError(t("error.bad_answer")) from exc
 
 
 def _thumb(video_id: str) -> str:
@@ -203,7 +201,7 @@ def search(query: str, settings: Settings, limit: int = 10) -> list[SearchResult
         results.append(
             SearchResult(
                 id=e["id"],
-                title=e.get("title") or "(sin título)",
+                title=e.get("title") or t("ytdlp.no_title"),
                 channel=e.get("channel") or e.get("uploader") or "",
                 duration=fmt_duration(e.get("duration")),
                 url=f"https://www.youtube.com/watch?v={e['id']}",
@@ -228,7 +226,7 @@ def search_music(query: str, settings: Settings, limit: int = 10) -> list[Search
     try:
         result = proc.run(args, timeout=120)
     except Exception as exc:
-        raise YtdlpError(f"No se pudo ejecutar yt-dlp: {exc}") from exc
+        raise YtdlpError(t("error.run", error=exc)) from exc
 
     results = []
     for line in result.stdout.splitlines():
@@ -244,7 +242,7 @@ def search_music(query: str, settings: Settings, limit: int = 10) -> list[Search
         results.append(
             SearchResult(
                 id=e["id"],
-                title=e.get("title") or "(sin título)",
+                title=e.get("title") or t("ytdlp.no_title"),
                 channel=" · ".join(x for x in (artist, album) if x),
                 duration=fmt_duration(e.get("duration")),
                 url=f"https://www.youtube.com/watch?v={e['id']}",
@@ -271,30 +269,25 @@ def probe(url: str, settings: Settings):
             entries.append(
                 PlaylistEntry(
                     id=e["id"],
-                    title=e.get("title") or "(sin título)",
+                    title=e.get("title") or t("ytdlp.no_title"),
                     duration=fmt_duration(e.get("duration")),
                     url=f"https://www.youtube.com/watch?v={e['id']}",
                 )
             )
         return "playlist", PlaylistInfo(title=data.get("title") or "Playlist", entries=entries)
     if data.get("is_live"):
-        raise YtdlpError(LIVE_ERROR)
+        raise YtdlpError(t("error.live"))
     return "video", data.get("title") or url
 
 
-SUB_NAMES = {
-    "es": "Español", "en": "Inglés", "pt": "Portugués", "fr": "Francés", "de": "Alemán",
-    "it": "Italiano", "ja": "Japonés", "ko": "Coreano", "zh": "Chino", "ru": "Ruso",
-}
-
-
 def _sub_label(code: str, tracks: list) -> str:
-    base = code.split("-")[0]
-    if base in SUB_NAMES:
-        return SUB_NAMES[base]
-    for t in tracks or []:
-        if t.get("name"):
-            return t["name"]
+    # Los idiomas más comunes con su nombre traducido ("lang.es"); el resto, con el nombre que da YouTube
+    name = t("lang." + code.split("-")[0], default="")
+    if name:
+        return name
+    for track in tracks or []:
+        if track.get("name"):
+            return track["name"]
     return code
 
 
@@ -302,7 +295,7 @@ def analyze_video(url: str, settings: Settings) -> VideoInfo:
     """Lee todos los formatos reales de un video."""
     data = _run_json(_base_args(settings) + ["--no-playlist", "-J", url], timeout=120)
     if data.get("is_live"):
-        raise YtdlpError(LIVE_ERROR)
+        raise YtdlpError(t("error.live"))
 
     # Mejor audio (para sumar su tamaño a cada calidad de video)
     audio_size = 0
@@ -345,7 +338,7 @@ def analyze_video(url: str, settings: Settings) -> VideoInfo:
     original = data.get("language") or ""
     for code, tracks in auto.items():
         if code.endswith("-orig") or code in ("es", "en") or (original and code == original):
-            label = _sub_label(code, tracks) + " (automáticos)"
+            label = t("ytdlp.auto_subs", name=_sub_label(code, tracks))
             subtitles.append(SubtitleOption(code, label, auto=True))
 
     return VideoInfo(
@@ -374,12 +367,12 @@ def describe_options(options: dict) -> str:
         fmt = options["format"].upper()
         if options["format"] in ("flac", "wav"):
             return fmt
-        quality = "Mejor calidad" if options["quality"] == "best" else f"{options['quality']} kbps"
+        quality = t("ytdlp.best_quality") if options["quality"] == "best" else f"{options['quality']} kbps"
         return f"{fmt} · {quality}"
     res = options.get("res")
-    text = f"{options['container'].upper()} · {f'{res}p' if res else 'Mejor'}"
+    text = f"{options['container'].upper()} · {f'{res}p' if res else t('ytdlp.best')}"
     if options.get("subs") and options.get("sub_lang"):
-        text += f" · Subt. {options['sub_lang'].split('-')[0].upper()}"
+        text += " · " + t("ytdlp.subs", lang=options["sub_lang"].split("-")[0].upper())
     return text
 
 

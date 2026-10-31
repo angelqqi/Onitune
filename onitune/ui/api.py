@@ -17,12 +17,13 @@ from typing import Optional
 import webview
 
 from .. import APP_NAME, APP_VERSION, REPO_URL
-from ..core import clipboard, deps, paths, proc, ytdlp
+from ..core import clipboard, deps, i18n, paths, proc, ytdlp
+from ..core.i18n import t
 from ..core.settings import Settings
 from . import themes
 
 # Ajustes que la página puede cambiar directamente (el resto tiene su propia función)
-EDITABLE = {f.name for f in fields(Settings)} - {"audio_dir", "video_dir", "cookies_file", "max_parallel"}
+EDITABLE = {f.name for f in fields(Settings)} - {"audio_dir", "video_dir", "cookies_file", "max_parallel", "language"}
 
 
 class Api:
@@ -38,6 +39,11 @@ class Api:
             "app": {"name": APP_NAME, "version": APP_VERSION, "repo": REPO_URL, "icon": app.icon_data(),
                     "windows": paths.IS_WINDOWS, "debug": bool(os.environ.get("ONITUNE_DEBUG"))},
             "settings": asdict(app.settings),
+            # Idioma: los textos ya traducidos, los idiomas que hay y cuál sería el automático
+            "lang": i18n.current(),
+            "texts": i18n.texts(),
+            "languages": i18n.available(),
+            "system_lang": i18n.resolve(""),
             "themes": [themes.to_dict(p) for p in themes.THEMES],
             "theme": themes.get(app.settings.theme).id,
             "setup": bool(deps.missing()),
@@ -77,7 +83,7 @@ class Api:
             app.settings.save()
             emit("setup", {"step": "folders", "state": "done"}, key="setup:folders")
         except Exception as exc:
-            return {"ok": False, "error": f"No se pudo completar: {exc}. Revisar la conexión a internet."}
+            return {"ok": False, "error": t("setup.error", error=exc)}
         time.sleep(0.6)  # que se alcance a ver el último paso marcado
         return {"ok": True}
 
@@ -89,6 +95,14 @@ class Api:
         setattr(self._app.settings, name, value)
         self._app.settings.save()
         return True
+
+    def set_language(self, code: str) -> None:
+        """Cambia el idioma ("" = automático). Después la página se vuelve a armar."""
+        app = self._app
+        app.settings.language = code if code in {c for c, _ in i18n.available()} else ""
+        app.settings.save()
+        i18n.load(app.settings.language)
+        app.ytdlp_status["message"] = ""  # estaba en el idioma anterior
 
     def set_parallel(self, delta: int) -> int:
         app = self._app
@@ -113,7 +127,7 @@ class Api:
     def pick_cookies(self) -> Optional[str]:
         app = self._app
         result = app.window.create_file_dialog(
-            webview.FileDialog.OPEN, file_types=("Archivo de cookies (*.txt)", "Todos los archivos (*.*)")
+            webview.FileDialog.OPEN, file_types=(t("settings.cookies_filter"), t("settings.all_files"))
         )
         if not result:
             return None
@@ -144,7 +158,7 @@ class Api:
 
     def versions(self) -> dict:
         # La app descarga su propia copia la primera vez; si no, usa la del sistema
-        where = "descargado por Onitune" if deps.ffmpeg_location() else "instalado en el sistema"
+        where = t("settings.ffmpeg_own") if deps.ffmpeg_location() else t("settings.ffmpeg_system")
         return {"ytdlp": deps.ytdlp_version(), "ffmpeg": f"{deps.ffmpeg_version()} · {where}"}
 
     def update_ytdlp(self) -> dict:
@@ -171,11 +185,11 @@ class Api:
             what, info = ytdlp.probe(url, settings)
             if what == "playlist":
                 if not info.entries:
-                    return {"error": "La playlist está vacía o es privada"}
-                where = "Audio" if kind == "audio" else "Video"
-                note = f"Se guardará en {where}"
+                    return {"error": t("playlist.empty")}
+                folder = t("nav.audio") if kind == "audio" else t("nav.video")
                 if settings.playlist_subfolder:
-                    note += f"/{ytdlp.safe_folder_name(info.title)}"
+                    folder += f"/{ytdlp.safe_folder_name(info.title)}"
+                note = t("playlist.save_in", folder=folder)
                 return {"type": "playlist", "info": asdict(info), "folder_note": note,
                         "music": ytdlp.is_music_url(url)}
             if kind == "video":
@@ -240,13 +254,13 @@ class Api:
             if path and os.path.exists(path):
                 proc.open_path(path)
                 return ""
-            return "El archivo ya no está"
+            return t("history.file_gone")
         if path and os.path.exists(path):
             proc.show_in_folder(path)
         elif folder and os.path.isdir(folder):
             proc.open_path(folder)
         else:
-            return "La carpeta ya no existe"
+            return t("history.folder_gone")
         return ""
 
     # ------------------------------------------------------------ historial
