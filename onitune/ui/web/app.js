@@ -650,7 +650,7 @@ const Video = {
           h("div.row.small.ok-text", { style: { gap: "6px" } }, icon("check"), found)))),
       card(h("div.col", { style: { gap: "16px" } },
         h("div.col", sectionLabel("Resolución"), h("div.row.wrap", { style: { gap: "8px" } }, this.chips),
-          h("div.small.muted", { text: "Solo aparecen las calidades que este video tiene de verdad. Los tamaños son aproximados." })),
+          h("div.small.muted", { text: "Solo se muestran las calidades disponibles para este video. Los tamaños son aproximados." })),
         h("hr.divider"),
         h("div.video-grid",
           h("div.col", sectionLabel("Formato"), container, containerDesc),
@@ -707,7 +707,7 @@ const Queue = {
           iconButton("remove", "Menos", () => step(-1)), this.parallel, iconButton("add", "Más", () => step(1))),
         h("div.row", this.pauseAll, button("outlined", "Quitar completadas", "done_all", () => api.queue_all("clear_done")))),
       this.list,
-      h("div.small.muted", { text: "Las descargas pendientes se guardan: continúan al volver a abrir la app." }));
+      h("div.small.muted", { text: "Si se cierra Onitune antes de que terminen, las descargas continúan solas al abrirlo de nuevo." }));
     this.rebuild();
   },
 
@@ -976,7 +976,7 @@ const Settings = {
 
     // Portadas
     const covers = card(h("div.col", title("Portada cuadrada"),
-      note("YouTube guarda las miniaturas en formato rectangular y rellena los lados de las portadas de álbum. Recortar deja solo el cuadrado del centro, como en YouTube Music. En videos con una imagen rectangular de verdad se pierden los lados."),
+      note("YouTube guarda las miniaturas en formato rectangular y rellena los lados de las portadas de álbum. Recortar deja solo el cuadrado del centro, como en YouTube Music. Si la imagen original es rectangular, se pierden sus bordes laterales."),
       radioGroup([
         ["music", "Solo canciones de YouTube Music (búsqueda o enlaces music.youtube.com)"],
         ["audio", "Todas las descargas de audio"],

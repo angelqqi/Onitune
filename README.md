@@ -28,7 +28,7 @@
 - **Portada cuadrada:** recorta la miniatura de YouTube para que la portada quede cuadrada, como en YouTube Music. Se elige en Ajustes si se aplica a canciones de YouTube Music, a todo el audio, al video o a nada.
 - **Video:** analiza el enlace y muestra solo las resoluciones que ese video tiene. MP4 o MKV, con subtítulos incrustados o en un archivo aparte.
 - **Playlists:** muestra la lista para seleccionar qué videos descargar.
-- **Descargas:** varias a la vez, con pausa, reanudación, cancelación y reintento. Las pendientes se guardan al cerrar la app.
+- **Descargas:** varias a la vez; cada una se puede pausar, reanudar, cancelar o reintentar. Si se cierra la app, continúan al abrirla de nuevo.
 - **Historial:** buscar, filtrar, abrir el archivo o la carpeta, volver a descargar y borrar (de a uno o todo de una vez).
 - **Temas:** 14 temas de color (Drácula, Alucard, Tokyo Night, Catppuccin, Nord, Gruvbox, Rosé Pine, Solarized…) que se eligen en Ajustes.
 - **Extras:** detecta enlaces de YouTube copiados, usa cookies del navegador (para videos con restricción de edad), muestra avisos del sistema y avisa cuando hay una versión nueva de Onitune.
@@ -41,12 +41,12 @@ Escribe un artista o una canción y elige entre los resultados de YouTube Music.
 <img src="docs/capturas/audio.png" alt="Pestaña Audio: búsqueda con resultados, formatos MP3, M4A, OPUS, FLAC y WAV">
 
 ### Video en la calidad que quieras
-Al pegar un enlace, Onitune muestra solo las calidades que ese video tiene de verdad (hasta 4K y 60 fps).
+Al pegar un enlace, Onitune muestra solo las calidades disponibles para ese video (hasta 4K y 60 fps).
 
 <img src="docs/capturas/video.png" alt="Pestaña Video: calidades disponibles de 144p a 2160p 4K, formato MP4 o MKV y subtítulos">
 
 ### Varias descargas a la vez
-Pausa, reanuda o cancela cada una. Si cierras la app, las pendientes siguen la próxima vez.
+Cada descarga se puede pausar, reanudar o cancelar. Si se cierra Onitune antes de que terminen, continúan solas al abrirlo de nuevo.
 
 <img src="docs/capturas/descargas.png" alt="Pestaña Descargas: dos descargando con barra de progreso, una en pausa, una en espera y una completada">
 
