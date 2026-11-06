@@ -1,4 +1,12 @@
-# Lo necesario para crear el ejecutable (python build.py)
+# Lo necesario para crear el ejecutable (python build.py), con Python 3.13
 -r requirements.txt
-pyinstaller>=6.22
-pillow  # para tools/make_icon.py y los scripts de capturas
+# pywebview en Windows (van dentro del .exe). Versión fija: el .exe siempre
+# se arma con lo mismo que ya se probó.
+pythonnet==3.2.1; sys_platform == "win32"
+clr_loader==0.3.1; sys_platform == "win32"
+cffi==2.1.1; sys_platform == "win32"
+pycparser==3.12; sys_platform == "win32"
+# PyInstaller (arma el .exe; no va dentro)
+pyinstaller==6.22.3
+pyinstaller-hooks-contrib==2026.9
+pillow  # para tools/make_icon.py y los scripts de capturas (no va dentro del .exe)

@@ -30,7 +30,7 @@
 - **Playlists:** se elige qué videos descargar.
 - **Descargas:** varias a la vez; pausar, reanudar, cancelar o reintentar. Si se cierra la app, siguen al abrirla.
 - **Historial:** buscar, abrir el archivo o la carpeta, volver a descargar o borrarlo todo.
-- **Idiomas:** español, inglés y portugués. Viene en inglés; se cambia en Ajustes (o elige "Automático" para usar el idioma del sistema).
+- **Idiomas:** español, inglés y portugués. Por defecto usa el idioma del sistema (inglés si el tuyo aún no está traducido); se cambia en Ajustes.
 - **Extras:** 14 temas (Drácula, Tokyo Night, Catppuccin, Nord, Gruvbox, Rosé Pine…), aviso al copiar un enlace de YouTube, cookies del navegador para videos con restricción de edad y aviso de versión nueva.
 
 <details>
@@ -63,7 +63,7 @@ En la [última versión (Releases)](https://github.com/angelqqi/Onitune/releases
 | `Onitune-X.Y.Z-windows.zip` | **Portable**: se descomprime la carpeta y se abre `Onitune.exe`. Es la que abre más rápido. |
 | `Onitune.exe` | **Un solo archivo**: se abre sin instalar, pero tarda un poco más en abrir. |
 
-La primera vez, la app descarga sola **yt-dlp** y **ffmpeg** de sus páginas oficiales.
+La primera vez, la app descarga sola **yt-dlp**, **ffmpeg** y **Deno** (el motor de JavaScript que yt-dlp necesita para YouTube) de sus páginas oficiales, y comprueba la huella SHA256 de cada archivo.
 
 **Linux (Debian, Ubuntu, Mint...):** descarga `onitune_X.Y.Z_all.deb` e instálalo con `sudo apt install ./onitune_X.Y.Z_all.deb` (apt agrega lo que haga falta). Luego abre Onitune desde el menú de aplicaciones o escribiendo `onitune`. En otras distribuciones, se puede usar con Python (ver abajo).
 
@@ -118,7 +118,7 @@ Todo queda en `dist/`: el instalador, el `.zip` portable, el `.exe` de un solo a
 
 | Qué | Windows | Linux |
 |---|---|---|
-| Ajustes, descargas pendientes, historial, yt-dlp y ffmpeg | `%LOCALAPPDATA%\Onitune` | `~/.local/share/onitune` |
+| Ajustes, descargas pendientes, historial, yt-dlp, ffmpeg y Deno | `%LOCALAPPDATA%\Onitune` | `~/.local/share/onitune` |
 | Archivos descargados (por defecto, se cambia en Ajustes) | `Música\Onitune\Audio` y `Videos\Onitune\Video` | `~/Music/Onitune/...` y `~/Videos/Onitune/...` |
 
 ### Cómo está organizado el código
@@ -129,7 +129,7 @@ onitune/
   core/                 La lógica, sin nada de interfaz
     paths.py            Dónde se guarda cada cosa
     settings.py         Ajustes (settings.json)
-    deps.py             Descarga y actualiza yt-dlp y ffmpeg
+    deps.py             Descarga yt-dlp, ffmpeg y Deno (comprueba sus huellas)
     ytdlp.py            Habla con yt-dlp: buscar, analizar y armar el comando de descarga
     queue.py            La cola de descargas: lanza yt-dlp, lee el progreso, pausa y cancela
     history.py          Historial (history.json)
@@ -169,6 +169,6 @@ No pienso dejar el proyecto de lado. El trabajo no me permite dedicarme de lleno
 
 ## Licencia y aviso legal
 
-- El código de Onitune tiene licencia **MIT** (ver [LICENSE](LICENSE)). Los programas de terceros que usa (yt-dlp, FFmpeg, pywebview…) y sus licencias están en [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md). yt-dlp y FFmpeg **no** van incluidos: la app los descarga de sus páginas oficiales.
+- El código de Onitune tiene licencia **MIT** (ver [LICENSE](LICENSE)). Los programas de terceros que usa (yt-dlp, FFmpeg, Deno, pywebview…) y sus licencias están en [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md). yt-dlp, FFmpeg y Deno **no** van incluidos: la app los descarga de sus páginas oficiales.
 - Onitune **no está afiliado** a YouTube ni a Google. "YouTube" es una marca de Google LLC y se menciona solo para describir para qué sirve la app.
 - Descargar contenido puede ir contra los términos de YouTube o los derechos de autor de quien lo creó. **La app debe usarse solo con contenido que se tenga derecho a guardar** (por ejemplo, videos propios o contenido con licencia libre). Cada persona es responsable de cómo la usa.

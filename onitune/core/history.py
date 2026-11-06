@@ -1,10 +1,9 @@
 """Historial de descargas terminadas, guardado en history.json."""
 
-import json
 import os
 import threading
 import uuid
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, fields
 from datetime import datetime
 from typing import Callable
 
@@ -44,18 +43,18 @@ class History:
         self._load()
 
     def _load(self) -> None:
-        if not self._file.exists():
-            return
-        try:
-            data = json.loads(self._file.read_text(encoding="utf-8"))
-            known = HistoryEntry.__dataclass_fields__.keys()
-            self.entries = [HistoryEntry(**{k: v for k, v in d.items() if k in known}) for d in data]
-        except (OSError, ValueError, TypeError):
-            self.entries = []
+        known = {f.name for f in fields(HistoryEntry)}
+        for d in paths.read_json(self._file, []):
+            try:
+                self.entries.append(HistoryEntry(**{k: v for k, v in d.items() if k in known}))
+            except (TypeError, AttributeError):
+                continue  # una entrada dañada no borra las demás
 
     def _save(self) -> None:
-        data = [asdict(e) for e in self.entries]
-        self._file.write_text(json.dumps(data, indent=1, ensure_ascii=False), encoding="utf-8")
+        try:
+            paths.write_json(self._file, [asdict(e) for e in self.entries])
+        except OSError:
+            pass  # disco lleno o sin permiso: se intenta de nuevo en el próximo cambio
 
     def _changed(self) -> None:
         for listener in list(self.listeners):

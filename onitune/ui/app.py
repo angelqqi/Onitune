@@ -97,11 +97,18 @@ class Bridge:
             self._pending[key or event] = (event, data)
         self._wake.set()
 
+    def set_ready(self) -> None:
+        """La página ya cargó: se mandan los avisos que estaban esperando."""
+        self.ready = True
+        self._wake.set()
+
     def _loop(self) -> None:
         while not self.closing:
             self._wake.wait()
             time.sleep(0.1)  # deja que se junten los avisos que llegan seguidos
             if not self.ready or not self.window:
+                # Los avisos quedan guardados; se duerme hasta set_ready() (antes giraba cada 0,1 s)
+                self._wake.clear()
                 continue
             with self._lock:
                 batch = list(self._pending.values())
@@ -210,9 +217,34 @@ class OnituneApp:
     # ------------------------------------------------------------ tareas de fondo
 
     def _auto_update(self) -> None:
-        ok, message = deps.update_ytdlp()
-        self.ytdlp_status = {"ok": ok, "message": message}
-        self.bridge.emit("ytdlp", self.ytdlp_status)
+        """yt-dlp en cada arranque; Deno y ffmpeg solo si pasó una semana."""
+        names = ["ytdlp"]
+        if time.time() - self.settings.last_deps_check >= deps.UPDATE_EVERY_DAYS * 86400:
+            names += ["deno", "ffmpeg"]
+        self.update_components(names)
+
+    def update_components(self, names: list[str]) -> dict:
+        """Actualiza los componentes pedidos y avisa a la página (lo usa también el botón de Ajustes)."""
+        def progress_for(name: str):
+            def progress(fraction, done, total):
+                self.bridge.emit("deps_progress", {"name": name, "fraction": fraction, "done": done},
+                                 key="deps_progress:" + name)
+            return progress
+
+        results = deps.update_components(names, progress_for)
+        if "ytdlp" in results:
+            ok, message = results["ytdlp"]
+            self.ytdlp_status = {"ok": ok, "message": message}
+            self.bridge.emit("ytdlp", self.ytdlp_status)
+        # La revisión semanal cuenta solo si salió bien (sin internet se intenta en el próximo arranque)
+        weekly = [results[n] for n in ("deno", "ffmpeg") if n in results]
+        if len(weekly) == 2 and all(ok for ok, _ in weekly):
+            self.settings.last_deps_check = time.time()
+            self.settings.save()
+        info = {"results": {n: {"ok": ok, "message": m} for n, (ok, m) in results.items()},
+                "versions": deps.versions()}
+        self.bridge.emit("components", info)
+        return info
 
     def _check_app_update(self) -> None:
         found = updates.check()

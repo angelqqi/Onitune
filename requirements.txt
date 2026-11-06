@@ -1,2 +1,7 @@
 # Lo necesario para ejecutar Onitune con Python
 pywebview==6.2.1
+# Lo que pywebview usa por dentro, con versión fija: así una versión nueva
+# (o una falsa) no entra sin haberla probado. Son de Python puro: sirven en cualquier versión.
+bottle==0.13.4
+proxy_tools==0.1.0
+typing_extensions==4.16.0

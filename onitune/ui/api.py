@@ -17,7 +17,7 @@ from typing import Optional
 import webview
 
 from .. import APP_NAME, APP_VERSION, REPO_URL
-from ..core import clipboard, deps, i18n, paths, proc, ytdlp
+from ..core import clipboard, cookies, deps, i18n, paths, proc, ytdlp
 from ..core.i18n import t
 from ..core.settings import Settings
 from . import themes
@@ -46,7 +46,11 @@ class Api:
             "system_lang": i18n.resolve(""),
             "themes": [themes.to_dict(p) for p in themes.THEMES],
             "theme": themes.get(app.settings.theme).id,
+            # Navegadores para las cookies: cuáles están instalados y cuáles no se pueden usar
+            "browsers": cookies.browsers(),
             "setup": bool(deps.missing()),
+            # Lo que falta: con yt-dlp es el primer arranque; si no, una versión nueva que necesita algo más
+            "missing": deps.missing(),
         }
         if not state["setup"]:
             app.start_main()
@@ -57,17 +61,26 @@ class Api:
                 ytdlp=app.ytdlp_status,
                 app_update=app.app_update,
             )
-        app.bridge.ready = True
+        app.bridge.set_ready()
         return state
 
     def run_setup(self) -> dict:
-        """Primer arranque: descarga yt-dlp y ffmpeg y crea las carpetas."""
+        """Primer arranque: descarga yt-dlp, ffmpeg y Deno y crea las carpetas.
+
+        También se usa al actualizar desde una versión sin Deno: solo se descarga lo que falta.
+        Devuelve la lista de lo descargado, para que la página muestre un resumen
+        y espere a que el usuario pulse "Continuar".
+        """
         app = self._app
         emit = app.bridge.emit
+        downloads = (("yt-dlp", deps.download_ytdlp), ("ffmpeg", deps.download_ffmpeg), ("deno", deps.download_deno))
+        if not hasattr(self, "_downloaded"):
+            self._downloaded = []  # se conserva si hay que reintentar
         try:
-            for name, download in (("yt-dlp", deps.download_ytdlp), ("ffmpeg", deps.download_ffmpeg)):
+            for name, download in downloads:
                 if name not in deps.missing():
-                    emit("setup", {"step": name, "state": "done"}, key=f"setup:{name}")
+                    text = t("setup.verified") if name in self._downloaded else t("setup.already")
+                    emit("setup", {"step": name, "state": "done", "text": text}, key=f"setup:{name}")
                     continue
                 emit("setup", {"step": name, "state": "running"}, key=f"setup:{name}")
 
@@ -77,21 +90,25 @@ class Api:
                          key=f"setup:{name}")
 
                 download(progress)
-                emit("setup", {"step": name, "state": "done"}, key=f"setup:{name}")
+                self._downloaded.append(name)
+                emit("setup", {"step": name, "state": "done", "text": t("setup.verified")}, key=f"setup:{name}")
             for folder in (app.settings.audio_dir, app.settings.video_dir):
                 paths.Path(folder).mkdir(parents=True, exist_ok=True)
             app.settings.save()
             emit("setup", {"step": "folders", "state": "done"}, key="setup:folders")
         except Exception as exc:
             return {"ok": False, "error": t("setup.error", error=exc)}
-        time.sleep(0.6)  # que se alcance a ver el último paso marcado
-        return {"ok": True}
+        time.sleep(0.2)  # que llegue a la página el último paso marcado antes del resumen
+        names = {"yt-dlp": "yt-dlp", "ffmpeg": "ffmpeg", "deno": "Deno"}
+        return {"ok": True, "downloaded": [names[n] for n in self._downloaded]}
 
     # ------------------------------------------------------------ ajustes
 
     def set_setting(self, name: str, value) -> bool:
         if name not in EDITABLE:
             return False
+        if name == "cookies_browser" and value not in dict(cookies.BROWSERS):
+            return False  # solo navegadores conocidos
         setattr(self._app.settings, name, value)
         self._app.settings.save()
         return True
@@ -136,6 +153,10 @@ class Api:
         app.settings.save()
         return path
 
+    def test_cookies(self) -> dict:
+        """Botón "Probar" de Ajustes → Cookies: ¿yt-dlp puede usar las cookies elegidas?"""
+        return cookies.test(self._app.settings)
+
     # ------------------------------------------------------------ utilidades
 
     def get_clipboard(self) -> str:
@@ -157,15 +178,11 @@ class Api:
             return ""
 
     def versions(self) -> dict:
-        # La app descarga su propia copia la primera vez; si no, usa la del sistema
-        where = t("settings.ffmpeg_own") if deps.ffmpeg_location() else t("settings.ffmpeg_system")
-        return {"ytdlp": deps.ytdlp_version(), "ffmpeg": f"{deps.ffmpeg_version()} · {where}"}
+        return deps.versions()
 
-    def update_ytdlp(self) -> dict:
-        ok, message = deps.update_ytdlp()
-        self._app.ytdlp_status = {"ok": ok, "message": message}
-        self._app.bridge.emit("ytdlp", self._app.ytdlp_status)
-        return {"ok": ok, "message": message, "version": deps.ytdlp_version()}
+    def update_components(self) -> dict:
+        """Botón "Buscar actualizaciones": revisa yt-dlp, Deno y ffmpeg."""
+        return self._app.update_components(["ytdlp", "deno", "ffmpeg"])
 
     # ------------------------------------------------------------ buscar y analizar
 
@@ -179,6 +196,9 @@ class Api:
     def analyze(self, url: str, kind: str) -> dict:
         """Lee un enlace. Devuelve un video (con sus calidades si kind="video") o una playlist."""
         settings = self._app.settings
+        if not ytdlp.is_url(url):
+            return {"error": t("video.need_https")}
+        url = url.strip()
         try:
             if kind == "video" and not (ytdlp.is_playlist_url(url) and "v=" not in url):
                 return {"type": "video", "info": asdict(ytdlp.analyze_video(url, settings))}
@@ -194,7 +214,7 @@ class Api:
                         "music": ytdlp.is_music_url(url)}
             if kind == "video":
                 return {"type": "video", "info": asdict(ytdlp.analyze_video(url, settings))}
-            return {"type": "video", "info": {"title": info, "url": url, "music": ytdlp.is_music_url(url)}}
+            return {"type": "video", "info": {**info, "url": url, "music": ytdlp.is_music_url(url)}}
         except ytdlp.YtdlpError as exc:
             return {"error": str(exc)}
 
@@ -220,9 +240,11 @@ class Api:
             out_dir = s.video_dir
         if playlist_title and s.playlist_subfolder:
             out_dir = os.path.join(out_dir, ytdlp.safe_folder_name(playlist_title))
-        for item in items:
-            app.queue.add(item["url"], item["title"], opts, out_dir)
-        return len(items)
+        # Solo enlaces web: cualquier otra cosa se descarta (ver ytdlp.is_url)
+        valid = [i for i in items if isinstance(i, dict) and ytdlp.is_url(i.get("url"))]
+        for item in valid:
+            app.queue.add(item["url"].strip(), str(item.get("title") or item["url"]), opts, out_dir)
+        return len(valid)
 
     # ------------------------------------------------------------ cola
 
@@ -268,7 +290,7 @@ class Api:
     def history_again(self, entry_id: str) -> bool:
         app = self._app
         entry = next((e for e in app.history.entries if e.id == entry_id), None)
-        if not entry:
+        if not entry or not ytdlp.is_url(entry.url):
             return False
         folder = os.path.dirname(entry.filepath) if entry.filepath else ""
         if not folder or not os.path.isdir(folder):

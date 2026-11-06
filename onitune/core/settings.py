@@ -1,6 +1,5 @@
 """Ajustes del usuario, guardados en settings.json."""
 
-import json
 from dataclasses import asdict, dataclass, fields
 
 from . import paths
@@ -21,8 +20,8 @@ class Settings:
     cookies_browser: str = "firefox"
     cookies_file: str = ""
 
-    # Idioma: "en" por defecto; "" = automático (el del sistema), o un código: "es", "pt"... (ver core/i18n.py)
-    language: str = "en"
+    # Idioma: "" = automático (el del sistema, por defecto), o un código: "es", "en", "pt"... (ver core/i18n.py)
+    language: str = ""
 
     # Tema de colores (ver onitune/ui/themes.py)
     theme: str = "dracula"
@@ -32,8 +31,10 @@ class Settings:
     notify_each: bool = False
     watch_clipboard: bool = True
 
-    # yt-dlp
+    # Actualizar los componentes solos: yt-dlp al abrir la app, Deno y ffmpeg una vez
+    # por semana (se mantiene el nombre viejo para no perder lo que eligió el usuario)
     auto_update_ytdlp: bool = True
+    last_deps_check: float = 0.0  # cuándo se revisaron Deno y ffmpeg por última vez (segundos)
 
     # Avisar si hay una versión nueva de Onitune en GitHub (solo avisa, no instala)
     check_app_updates: bool = True
@@ -55,18 +56,13 @@ class Settings:
     video_subs_embed: bool = True
 
     def save(self) -> None:
-        file = paths.data_dir() / "settings.json"
-        file.write_text(json.dumps(asdict(self), indent=2, ensure_ascii=False), encoding="utf-8")
+        paths.write_json(paths.data_dir() / "settings.json", asdict(self), indent=2)
 
     @classmethod
     def load(cls) -> "Settings":
-        file = paths.data_dir() / "settings.json"
-        data = {}
-        if file.exists():
-            try:
-                data = json.loads(file.read_text(encoding="utf-8"))
-            except (OSError, ValueError):
-                data = {}
+        data = paths.read_json(paths.data_dir() / "settings.json", {})
+        if not isinstance(data, dict):
+            data = {}
         # Solo usamos las claves que conocemos (por si el archivo es de otra versión)
         known = {f.name for f in fields(cls)}
         settings = cls(**{k: v for k, v in data.items() if k in known})

@@ -80,8 +80,13 @@ class VideoInfo:
 # ---------------------------------------------------------------- utilidades
 
 
-def is_url(text: str) -> bool:
-    return bool(re.match(r"^https?://", text.strip(), re.IGNORECASE))
+def is_url(text) -> bool:
+    """True si es un enlace web (http:// o https://, sin espacios).
+
+    Python lo revisa aunque la página ya lo haga: así nunca le llega a yt-dlp
+    un texto que empiece con "-", que leería como una opción (p. ej. --exec).
+    """
+    return isinstance(text, str) and bool(re.match(r"^https?://\S+$", text.strip(), re.IGNORECASE))
 
 
 def is_youtube_url(text: str) -> bool:
@@ -118,15 +123,32 @@ def fmt_size(size) -> str:
     return ""
 
 
+WINDOWS_RESERVED = {"CON", "PRN", "AUX", "NUL", *(f"COM{i}" for i in range(1, 10)), *(f"LPT{i}" for i in range(1, 10))}
+
+
 def safe_folder_name(name: str) -> str:
     """Quita los caracteres que Windows no permite en nombres de carpeta."""
-    cleaned = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "", name).strip(" .")
-    return cleaned[:100] or "Playlist"
+    cleaned = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "", name).strip(" .")[:100].strip(" .")
+    # Windows tampoco deja usar estos nombres, aunque lleven algo después de un punto ("con.mp3")
+    if cleaned.split(".")[0].strip().upper() in WINDOWS_RESERVED:
+        cleaned = "_" + cleaned
+    return cleaned or "Playlist"
 
 
 def friendly_error(text: str) -> str:
     """Traduce los errores más comunes de yt-dlp a algo entendible."""
     lower = text.lower()
+    # Cookies del navegador (van primero: el texto de estos errores es muy técnico)
+    if "dpapi" in lower or "app-bound" in lower:
+        return t("error.cookies_blocked")  # Chrome/Edge en Windows
+    if "could not copy" in lower and "cookie" in lower:
+        return t("error.cookies_locked")  # el navegador abierto bloquea el archivo
+    if "could not find" in lower and "cookie" in lower:
+        return t("error.cookies_not_found")
+    if "netscape" in lower or ("cookies" in lower and "no such file" in lower):
+        return t("error.cookies_bad_file")
+    if "cookies are no longer valid" in lower:
+        return t("error.cookies_expired")
     if "confirm your age" in lower or "age-restricted" in lower or "inappropriate" in lower:
         return t("error.age")
     if "sign in to confirm you" in lower and "bot" in lower:
@@ -149,7 +171,7 @@ def friendly_error(text: str) -> str:
     return text[:200] or t("error.unknown")
 
 
-def _last_error(output: str) -> str:
+def last_error(output: str) -> str:
     errors = [line for line in output.splitlines() if line.startswith("ERROR:")]
     return errors[-1] if errors else (output.strip().splitlines() or [""])[-1]
 
@@ -162,12 +184,15 @@ def cookie_args(settings: Settings) -> list[str]:
     return []
 
 
-def _base_args(settings: Settings) -> list[str]:
-    args = [str(paths.ytdlp_path()), "--encoding", "utf-8", "--no-warnings"]
+def base_args(settings: Settings) -> list[str]:
+    # --ignore-config: no leer archivos de configuración de yt-dlp (el del usuario
+    # o un yt-dlp.conf en la carpeta de descargas). Podrían cambiar las descargas
+    # o hasta ejecutar programas (--exec).
+    args = [str(paths.ytdlp_path()), "--ignore-config", "--encoding", "utf-8", "--no-warnings"]
     location = deps.ffmpeg_location()
     if location:
         args += ["--ffmpeg-location", location]
-    return args + cookie_args(settings)
+    return args + deps.js_runtime_args() + cookie_args(settings)
 
 
 def _run_json(args: list[str], timeout: float) -> dict:
@@ -176,7 +201,7 @@ def _run_json(args: list[str], timeout: float) -> dict:
     except Exception as exc:  # timeout, programa no encontrado...
         raise YtdlpError(t("error.run", error=exc)) from exc
     if result.returncode != 0 or not result.stdout.strip():
-        raise YtdlpError(friendly_error(_last_error(result.stderr or result.stdout)))
+        raise YtdlpError(friendly_error(last_error(result.stderr or result.stdout)))
     try:
         return json.loads(result.stdout)
     except ValueError as exc:
@@ -193,7 +218,7 @@ def _thumb(video_id: str) -> str:
 def search(query: str, settings: Settings, limit: int = 10) -> list[SearchResult]:
     if settings.music_search:
         return search_music(query, settings, limit)
-    data = _run_json(_base_args(settings) + ["--flat-playlist", "-J", f"ytsearch{limit}:{query}"], timeout=90)
+    data = _run_json(base_args(settings) + ["--flat-playlist", "-J", "--", f"ytsearch{limit}:{query}"], timeout=90)
     results = []
     for e in data.get("entries") or []:
         if not e or not e.get("id"):
@@ -222,7 +247,7 @@ def search_music(query: str, settings: Settings, limit: int = 10) -> list[Search
     url = "https://music.youtube.com/search?" + urllib.parse.urlencode({"q": query}) + "#songs"
     # yt-dlp imprime una línea JSON por canción con solo los campos que pedimos
     fields = "%(.{id,title,artists,album,duration,channel,live_status})j"
-    args = _base_args(settings) + ["--skip-download", "--playlist-end", str(limit), "--print", fields, url]
+    args = base_args(settings) + ["--skip-download", "--playlist-end", str(limit), "--print", fields, "--", url]
     try:
         result = proc.run(args, timeout=120)
     except Exception as exc:
@@ -252,13 +277,13 @@ def search_music(query: str, settings: Settings, limit: int = 10) -> list[Search
             )
         )
     if not results and result.returncode != 0:
-        raise YtdlpError(friendly_error(_last_error(result.stderr or result.stdout)))
+        raise YtdlpError(friendly_error(last_error(result.stderr or result.stdout)))
     return results
 
 
 def probe(url: str, settings: Settings):
-    """Mira rápido un enlace. Devuelve ("playlist", PlaylistInfo) o ("video", título)."""
-    data = _run_json(_base_args(settings) + ["--flat-playlist", "-J", url], timeout=120)
+    """Mira rápido un enlace. Devuelve ("playlist", PlaylistInfo) o ("video", datos para la vista previa)."""
+    data = _run_json(base_args(settings) + ["--flat-playlist", "-J", "--", url], timeout=120)
     if data.get("_type") == "playlist":
         entries = []
         for e in data.get("entries") or []:
@@ -277,7 +302,14 @@ def probe(url: str, settings: Settings):
         return "playlist", PlaylistInfo(title=data.get("title") or "Playlist", entries=entries)
     if data.get("is_live"):
         raise YtdlpError(t("error.live"))
-    return "video", data.get("title") or url
+    # Lo que se ve debajo del título: "Artista · Álbum" (canciones) o el canal
+    artist = (data.get("artists") or [data.get("channel") or data.get("uploader") or ""])[0]
+    return "video", {
+        "title": data.get("title") or url,
+        "channel": " · ".join(x for x in (artist, data.get("album") or "") if x),
+        "duration": fmt_duration(data.get("duration")),
+        "thumbnail": data.get("thumbnail") or (_thumb(data["id"]) if data.get("id") else ""),
+    }
 
 
 def _sub_label(code: str, tracks: list) -> str:
@@ -293,7 +325,7 @@ def _sub_label(code: str, tracks: list) -> str:
 
 def analyze_video(url: str, settings: Settings) -> VideoInfo:
     """Lee todos los formatos reales de un video."""
-    data = _run_json(_base_args(settings) + ["--no-playlist", "-J", url], timeout=120)
+    data = _run_json(base_args(settings) + ["--no-playlist", "-J", "--", url], timeout=120)
     if data.get("is_live"):
         raise YtdlpError(t("error.live"))
 
@@ -401,7 +433,7 @@ def crop_cover(options: dict, settings: Settings) -> bool:
 
 def download_args(url: str, options: dict, out_dir: str, tmp_dir: str, settings: Settings) -> list[str]:
     """Arma la línea de comandos de yt-dlp para una descarga."""
-    args = _base_args(settings) + [
+    args = base_args(settings) + [
         "--newline",
         "--progress",
         "--no-playlist",
@@ -465,7 +497,8 @@ def download_args(url: str, options: dict, out_dir: str, tmp_dir: str, settings:
             if embed:
                 args += ["--embed-subs"]
 
-    return args + [url]
+    # "--": desde aquí yt-dlp ya no busca opciones; el enlace nunca se lee como una opción
+    return args + ["--", url]
 
 
 def _num(text: str) -> Optional[float]:

@@ -22,6 +22,7 @@ from typing import Optional
 
 FOLDER = Path(__file__).resolve().parents[1] / "idiomas"
 BASE = "es"  # el idioma completo, que se usa de respaldo
+FALLBACK = "en"  # si el idioma del sistema no está traducido (p. ej. francés), se usa inglés
 
 _texts: dict = {}
 _current = BASE
@@ -63,10 +64,10 @@ def system_language() -> str:
 def resolve(choice: str = "") -> str:
     """Idioma que se usará: el elegido o, si es "" (automático), el del sistema.
 
-    Si no hay archivo para ese idioma, se usa español.
+    Si no hay archivo para ese idioma, se usa inglés (o español si faltara en.json).
     """
     codes = {code for code, _ in available()}
-    for code in (choice, system_language()):
+    for code in (choice, system_language(), FALLBACK):
         if code and code in codes:
             return code
     return BASE

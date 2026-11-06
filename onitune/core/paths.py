@@ -1,13 +1,18 @@
 """Dónde guarda la app sus archivos, en Windows y en Linux."""
 
+import json
 import os
 import shutil
 import sys
+import tempfile
+import time
+from functools import cache
 from pathlib import Path
 
 IS_WINDOWS = sys.platform == "win32"
 
 
+@cache  # se calcula una sola vez: no hace falta revisar la carpeta en cada llamada
 def _app_dir() -> Path:
     """Carpeta normal de la app: %LOCALAPPDATA%\\Onitune o ~/.local/share/onitune."""
     if IS_WINDOWS:
@@ -61,6 +66,54 @@ def ytdlp_path() -> Path:
 
 def ffmpeg_path() -> Path:
     return bin_dir() / ("ffmpeg.exe" if IS_WINDOWS else "ffmpeg")
+
+
+def deno_path() -> Path:
+    return bin_dir() / ("deno.exe" if IS_WINDOWS else "deno")
+
+
+def write_json(file: Path, data, indent: int = 1) -> None:
+    """Guarda un JSON sin riesgo de dejarlo a medias.
+
+    Primero escribe un archivo temporal y después lo cambia por el original
+    de una sola vez. Si la app se cierra a mitad de camino, el archivo
+    anterior sigue intacto (antes podía quedar roto y perderse el historial).
+    """
+    text = json.dumps(data, indent=indent, ensure_ascii=False)
+    # Nombre temporal único: así dos hilos guardando a la vez no se pisan
+    fd, tmp = tempfile.mkstemp(prefix=file.name + ".", suffix=".tmp", dir=file.parent)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as out:
+            out.write(text)
+        for attempt in range(5):
+            try:
+                os.replace(tmp, file)
+                return
+            except PermissionError:
+                # Windows: el antivirus o el indexador puede tener el archivo abierto un momento
+                if attempt == 4:
+                    raise
+                time.sleep(0.05)
+    finally:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+
+
+def read_json(file: Path, default):
+    """Lee un JSON. Si está roto, lo guarda aparte (.roto) para no perderlo y devuelve `default`."""
+    if not file.exists():
+        return default
+    try:
+        return json.loads(file.read_text(encoding="utf-8"))
+    except OSError:
+        return default
+    except ValueError:
+        # Se renombra: si no, el próximo guardado lo borraría sin dejar rastro
+        try:
+            os.replace(file, file.with_name(file.name + ".roto"))
+        except OSError:
+            pass
+        return default
 
 
 def _first_existing(*candidates: Path) -> Path:

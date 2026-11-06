@@ -318,7 +318,7 @@ function updateBadge() {
 function showYtdlpStatus(status) {
   $("#dot-ytdlp").className = "dot " + (status.ok ? "ok" : "warn");
   $("#txt-ytdlp").textContent = status.ok ? t("rail.ytdlp_ok") : t("rail.ytdlp_old");
-  if (status.message) Settings.showUpdateResult(status.ok, status.message);
+  if (status.message) Settings.showUpdateResult("ytdlp", status.ok, status.message);
 }
 
 // ================================================================== avisos de arriba
@@ -391,9 +391,12 @@ function playlistDialog(data, kind, sourceUrl) {
     h("div.pl-list", checks.map((c) => c.row)),
   ];
   if (kind === "video") {
-    res = selectBox({ label: t("playlist.max_quality"), width: 220, value: "0", options: genericRes() });
-    container = segmented([["mp4", "MP4"], ["mkv", "MKV"]], S.settings.video_container);
-    body.push(h("div.row", { style: { gap: "16px" } }, res, container));
+    const warning = codecWarning();
+    const checkCodec = () => warning.check(Number(res.select.value), container.value);
+    res = selectBox({ label: t("playlist.max_quality"), width: 220, value: "0", options: genericRes(), onchange: checkCodec });
+    container = segmented([["mp4", "MP4"], ["mkv", "MKV"]], S.settings.video_container, checkCodec);
+    body.push(h("div.row", { style: { gap: "16px" } }, res, container), warning);
+    checkCodec();
   }
   body.push(h("div.small.muted", { text: data.folder_note }));
 
@@ -439,11 +442,12 @@ const Audio = {
       setSetting("audio_format", v);
       this.formatDesc.textContent = t("format." + v);
       this.applyRules();
+      this.updateSummary();
     });
     this.quality = selectBox({
       label: t("common.quality"), width: 220, value: s.audio_quality,
       options: [["best", t("common.best_available")], ["320", "320 kbps"], ["256", "256 kbps"], ["192", "192 kbps"], ["128", "128 kbps"]],
-      onchange: (v) => setSetting("audio_quality", v),
+      onchange: (v) => { setSetting("audio_quality", v); this.updateSummary(); },
     });
     this.qualityNote = h("div.small.muted", { text: t("audio.lossless_note"), hidden: true });
     this.cover = switchBox(t("audio.cover"), s.audio_cover, (v) => setSetting("audio_cover", v));
@@ -458,6 +462,7 @@ const Audio = {
 
     this.status = h("div", { hidden: true });
     this.error = h("div.error-msg", { hidden: true });
+    this.details = h("div.col", { hidden: true, style: { gap: "12px" } }); // vista previa de un enlace
     this.resultsTitle = h("div.results-title");
     this.resultsList = h("div.card.flush");
     this.results = h("div.col", { hidden: true, style: { gap: "12px" } }, this.resultsTitle, this.resultsList);
@@ -465,7 +470,7 @@ const Audio = {
     $("#view-audio").append(
       header(t("audio.title"), t("audio.subtitle")),
       h("div.search-row", this.query, paste, this.goBtn),
-      options, this.status, this.error, this.results);
+      options, this.status, this.error, this.details, this.results);
     this.applyRules();
   },
 
@@ -478,7 +483,7 @@ const Audio = {
   },
 
   updateButton() {
-    if (isUrl(this.query.input.value)) setButton(this.goBtn, t("common.download"), "download");
+    if (isUrl(this.query.input.value)) setButton(this.goBtn, t("video.analyze"), "search");
     else setButton(this.goBtn, t("common.search"), "search");
   },
 
@@ -496,16 +501,15 @@ const Audio = {
     const text = this.query.input.value.trim();
     if (!text || this.goBtn.disabled) return;
     this.showError("");
+    this.details.hidden = true;
     if (isUrl(text)) {
+      this.results.hidden = true;
       this.busy(t("audio.analyzing"));
       const r = await api.analyze(text, "audio");
       this.busy(null);
       if (r.error) return this.showError(r.error);
       if (r.type === "playlist") return playlistDialog(r, "audio", text);
-      await api.add("audio", [{ url: text, title: r.info.title }], { music: r.info.music });
-      this.query.set("");
-      this.updateButton();
-      toast(t("common.added"));
+      this.showPreview(r.info);
     } else {
       this.results.hidden = true;
       this.busy(t(S.settings.music_search ? "audio.searching_music" : "audio.searching", { text }));
@@ -516,6 +520,38 @@ const Audio = {
       this.resultsList.replaceChildren(...(r.results.length ? r.results.map((x) => this.resultRow(x)) : [emptyState(t("audio.no_results"))]));
       this.results.hidden = false;
     }
+  },
+
+  /** Un solo video: muestra qué se va a descargar (como en Video) y espera el botón "Descargar". */
+  showPreview(info) {
+    this.info = info;
+    this.summary = h("div.bold");
+    const download = button("filled", t("common.download"), "download", async () => {
+      download.disabled = true;
+      await api.add("audio", [{ url: info.url, title: info.title }], { music: info.music });
+      this.details.hidden = true;
+      this.query.set("");
+      this.updateButton();
+      toast(t("common.added"));
+    }, { big: true });
+    this.details.replaceChildren(
+      card(h("div.video-head",
+        thumb(info.thumbnail, 224, 126, info.duration),
+        h("div.col", { style: { gap: "6px" } },
+          h("div.video-title", { text: info.title }),
+          h("div.muted", { text: info.channel })))),
+      card(h("div.row", { style: { gap: "12px" } },
+        h("div.grow", this.summary, h("div.tiny.muted.ellipsis", { text: t("video.save_in", { path: S.settings.audio_dir }) })),
+        download)));
+    this.details.hidden = false;
+    this.updateSummary();
+  },
+
+  /** Texto "MP3 · Mejor calidad" de la vista previa (si hay una abierta). */
+  async updateSummary() {
+    if (!this.summary || this.details.hidden) return;
+    const s = S.settings;
+    this.summary.textContent = await api.describe({ kind: "audio", format: s.audio_format, quality: s.audio_quality });
   },
 
   resultRow(r) {
@@ -537,6 +573,14 @@ const Audio = {
 };
 
 // ================================================================== pestaña Video
+
+/** Nota para MP4 en más de 1080p: YouTube no ofrece H.264 en esas calidades (viene en AV1 o VP9),
+ *  y algunos televisores o celulares antiguos no lo abren. check(res, formato): res 0 = "Mejor". */
+function codecWarning() {
+  const el = h("div.row.small.muted", { hidden: true, style: { gap: "6px" } }, icon("info", true), t("video.codec_warning"));
+  el.check = (res, container) => { el.hidden = !(container === "mp4" && (!res || res > 1080)); };
+  return el;
+}
 
 // Para playlists no se analiza cada video: se ofrecen calidades típicas
 const genericRes = () => [["0", t("common.best_available")], ["2160", "2160p 4K"], ["1440", "1440p"], ["1080", "1080p"], ["720", "720p"], ["480", "480p"], ["360", "360p"]];
@@ -607,7 +651,8 @@ const Video = {
       return c;
     });
 
-    // Formato
+    // Formato (con "Mejor", la resolución es la más alta que tiene el video)
+    this.codecWarning = codecWarning();
     const containerDesc = h("div.small.muted", { text: t("format." + s.video_container) });
     const container = segmented([["mp4", "MP4"], ["mkv", "MKV"]], s.video_container, (v) => {
       setSetting("video_container", v);
@@ -657,7 +702,8 @@ const Video = {
         h("div.video-grid",
           h("div.col", sectionLabel(t("common.format")), container, containerDesc),
           h("div.col", sectionLabel(t("video.subtitles")), this.subs, subBox,
-            hasSubs ? null : h("div.small.muted", { text: t("video.no_subs") }))))),
+            hasSubs ? null : h("div.small.muted", { text: t("video.no_subs") }))),
+        this.codecWarning)), // debajo de las dos columnas, a todo el ancho
       card(h("div.row", { style: { gap: "12px" } },
         h("div.grow", this.summary, h("div.tiny.muted.ellipsis", { text: t("video.save_in", { path: s.video_dir }) })),
         button("filled", t("common.download"), "download", () => this.add(), { big: true }))));
@@ -675,7 +721,10 @@ const Video = {
     return o;
   },
 
-  async updateSummary() { this.summary.textContent = await api.describe(this.options()); },
+  async updateSummary() {
+    this.codecWarning?.check(this.res || this.info?.resolutions[0]?.res, S.settings.video_container);
+    this.summary.textContent = await api.describe(this.options());
+  },
 
   async add() {
     if (!this.info) return;
@@ -914,8 +963,6 @@ const History = {
 
 // ================================================================== pestaña Ajustes
 
-const BROWSERS = [["firefox", "Firefox"], ["chrome", "Chrome"], ["edge", "Edge"], ["brave", "Brave"], ["opera", "Opera"], ["vivaldi", "Vivaldi"]];
-
 const Settings = {
   versionsLoaded: false,
 
@@ -953,19 +1000,54 @@ const Settings = {
       folderRow(t("nav.audio"), "audio_dir"), folderRow(t("nav.video"), "video_dir"),
       switchBox(t("settings.playlist_subfolder"), s.playlist_subfolder, set("playlist_subfolder"))));
 
-    // Cookies
-    const browser = selectBox({ width: 180, value: s.cookies_browser, options: BROWSERS, onchange: set("cookies_browser") });
+    // Cookies: solo los navegadores instalados. Los que no se pueden leer (Chrome y Edge
+    // en Windows) se ven desactivados, con el motivo al lado.
+    const installed = S.browsers.filter((b) => b.installed);
+    const usable = installed.filter((b) => !b.blocked);
+    if (usable.length && !usable.some((b) => b.id === s.cookies_browser)) {
+      setSetting("cookies_browser", usable[0].id); // el guardado (p. ej. Firefox) no está: se elige uno que sí
+    }
+    const browserOptions = installed.length
+      ? installed.map((b) => [b.id, b.blocked ? `${b.name} (${t("settings.cookies_blocked_tag")})` : b.name])
+      : [["", t("settings.cookies_no_browsers")]];
+    const testResult = h("div.small", { hidden: true });
+    const hideResult = () => { testResult.hidden = true; };
+    // Lo que se ve elegido: el guardado si se puede usar; si no, el primero de la lista
+    const shown = usable.some((b) => b.id === s.cookies_browser) ? s.cookies_browser : browserOptions[0][0];
+    const browser = selectBox({ width: 240, value: shown, options: browserOptions,
+      onchange: (v) => { setSetting("cookies_browser", v); hideResult(); } });
+    [...browser.select.options].forEach((o) => { o.disabled = !usable.some((b) => b.id === o.value); });
     const cookiesFile = h("span.small.muted.ellipsis", { text: s.cookies_file || t("settings.cookies_no_file") });
     const fileBtn = button("outlined", t("settings.cookies_pick"), null, async () => {
       const p = await api.pick_cookies();
-      if (p) cookiesFile.textContent = p;
+      if (p) { cookiesFile.textContent = p; hideResult(); }
     });
-    const rules = (mode) => { browser.select.disabled = mode !== "browser"; fileBtn.disabled = mode !== "file"; };
+    const fileHelp = note(t("settings.cookies_file_help"));
+    // "Probar": yt-dlp lee las cookies y simula un video corto, sin descargar nada
+    const testBtn = button("outlined", t("settings.cookies_test"), "fact_check", async () => {
+      testBtn.disabled = true;
+      testResult.className = "small muted";
+      testResult.textContent = t("settings.cookies_testing");
+      testResult.hidden = false;
+      const r = await api.test_cookies();
+      testBtn.disabled = false;
+      testResult.className = "small bold " + (r.ok ? "ok-text" : "err-text");
+      testResult.textContent = r.message;
+    });
+    const rules = (mode) => {
+      browser.select.disabled = mode !== "browser" || !usable.length;
+      fileBtn.disabled = mode !== "file";
+      fileHelp.hidden = mode !== "file";
+      testBtn.disabled = mode === "none";
+      hideResult();
+    };
     const cookies = card(h("div.col", title(t("settings.cookies")),
       note(t("settings.cookies_note")),
       radioGroup([["none", t("settings.cookies_none")], ["browser", t("settings.cookies_browser"), browser],
         ["file", t("settings.cookies_file"), h("div.row.grow", fileBtn, cookiesFile)]],
-      s.cookies_mode, (v) => { setSetting("cookies_mode", v); rules(v); })));
+      s.cookies_mode, (v) => { setSetting("cookies_mode", v); rules(v); }),
+      fileHelp,
+      h("div.row", { style: { gap: "12px", alignItems: "center" } }, testBtn, testResult)));
     rules(s.cookies_mode);
 
     // Tema
@@ -990,14 +1072,19 @@ const Settings = {
       radioGroup(["music", "audio", "video", "both", "none"].map((v) => [v, t("settings.cover_" + v)]), s.cover_crop, set("cover_crop"), 0)));
 
     // Componentes
-    this.ytdlpVersion = h("div.tiny.muted", { text: "…" });
-    this.ffmpegVersion = h("div.tiny.muted", { text: "…" });
-    this.updateStatus = h("span.small.bold");
-    this.updateBtn = button("outlined", t("settings.check_update"), "refresh", () => this.updateYtdlp());
-    const components = card(h("div.col", { style: { gap: "12px" } }, title(t("settings.components")),
-      h("div.row", h("div.grow", h("div.bold", { text: "yt-dlp" }), this.ytdlpVersion), this.updateStatus, this.updateBtn),
+    // Una fila por componente: nombre, versión y, a la derecha, el resultado de la última revisión
+    this.comp = {};
+    const compRow = (key, name, tip) => {
+      this.comp[key] = { version: h("div.tiny.muted", { text: "…" }), status: h("span.small.bold") };
+      return h("div.row", { tip }, h("div.grow", h("div.bold", { text: name }), this.comp[key].version), this.comp[key].status);
+    };
+    this.updateBtn = button("outlined", t("settings.check_update"), "refresh", () => this.updateComponents());
+    const components = card(h("div.col", { style: { gap: "12px" } },
+      h("div.row", h("div.grow", title(t("settings.components"))), this.updateBtn),
+      compRow("ytdlp", "yt-dlp"),
+      compRow("deno", "Deno", t("setup.deno_desc")),
+      compRow("ffmpeg", "ffmpeg", t("setup.ffmpeg_desc")),
       h("hr.divider"),
-      h("div", h("div.bold", { text: "ffmpeg" }), this.ffmpegVersion),
       h("div.col", { style: { gap: "2px" } },
         switchBox(t("settings.auto_update"), s.auto_update_ytdlp, set("auto_update_ytdlp")),
         switchBox(t("settings.app_updates"), s.check_app_updates, set("check_app_updates")))));
@@ -1035,24 +1122,40 @@ const Settings = {
   async loadVersions() {
     if (this.versionsLoaded) return;
     this.versionsLoaded = true;
-    const v = await api.versions();
-    this.ytdlpVersion.textContent = t("settings.version", { version: v.ytdlp });
-    this.ffmpegVersion.textContent = v.ffmpeg;
+    this.showVersions(await api.versions());
   },
 
-  showUpdateResult(ok, message) {
-    this.updateStatus.textContent = message;
-    this.updateStatus.className = "small bold " + (ok ? "ok-text" : "err-text");
+  showVersions(v) {
+    for (const key in v) if (this.comp?.[key]) this.comp[key].version.textContent = v[key];
   },
 
-  async updateYtdlp() {
+  /** Texto a la derecha de un componente. ok: true (verde), false (rojo) o null (gris, en curso). */
+  showUpdateResult(key, ok, message) {
+    const status = this.comp?.[key]?.status;
+    if (!status) return;
+    status.textContent = message;
+    status.className = "small bold " + (ok === null ? "muted" : ok ? "ok-text" : "err-text");
+  },
+
+  /** Llega cuando termina una revisión (la automática o la del botón). */
+  showComponents(info) {
+    for (const [key, r] of Object.entries(info.results)) this.showUpdateResult(key, r.ok, r.message);
+    this.showVersions(info.versions);
+  },
+
+  showProgress(p) {
+    const amount = p.fraction == null ? `${Math.round(p.done / 1048576)} MB` : `${Math.round(p.fraction * 100)} %`;
+    this.showUpdateResult(p.name, null, t("settings.downloading", { progress: amount }));
+  },
+
+  async updateComponents() {
     this.updateBtn.disabled = true;
-    this.updateStatus.textContent = t("settings.checking");
-    this.updateStatus.className = "small bold muted";
-    const r = await api.update_ytdlp();
-    this.updateBtn.disabled = false;
-    this.showUpdateResult(r.ok, r.message);
-    this.ytdlpVersion.textContent = t("settings.version", { version: r.version });
+    for (const key in this.comp) this.showUpdateResult(key, null, t("settings.checking"));
+    try {
+      this.showComponents(await api.update_components());
+    } finally {
+      this.updateBtn.disabled = false;
+    }
   },
 };
 
@@ -1061,7 +1164,10 @@ const Settings = {
 const Setup = {
   steps: {},
 
-  build() {
+  /** missing: lo que falta ("yt-dlp", "ffmpeg", "deno"). Sin yt-dlp es el primer arranque;
+   *  si no, es una versión nueva de la app que necesita algo más: solo se muestra eso. */
+  build(missing) {
+    this.first = missing.includes("yt-dlp");
     const where = S.app.windows ? "%LOCALAPPDATA%\\Onitune" : "~/.local/share/onitune";
     const step = (id, name, desc) => {
       const mark = h("div.mark");
@@ -1074,17 +1180,37 @@ const Setup = {
     this.error = h("div.error-msg", { hidden: true });
     this.retry = button("filled", t("common.retry"), "refresh", () => this.run());
     this.retryRow = h("div.row", { hidden: true, style: { justifyContent: "flex-end" } }, this.retry);
+    // Al terminar no se cierra sola: muestra un resumen y espera a que el usuario pulse "Continuar"
+    this.summary = h("div.setup-done", { hidden: true });
+    this.continueRow = h("div.row", { hidden: true, style: { justifyContent: "flex-end" } },
+      button("filled", t("setup.continue"), "arrow_forward", () => start()));
+    this.title = h("h1", { text: t(this.first ? "setup.title" : "setup.update_title") });
+    this.subtitle = h("div.muted", { text: t(this.first ? "setup.subtitle" : "setup.update_subtitle") });
+    const components = [["yt-dlp", "ytdlp"], ["ffmpeg", "ffmpeg"], ["deno", "deno"]]
+      .filter(([id]) => this.first || missing.includes(id))
+      .map(([id, key]) => step(id, t(`setup.${key}`), t(`setup.${key}_desc`)));
     $("#setup").append(h("div.setup-box",
-      h("div.setup-head", h("img", { src: S.app.icon, alt: "" }),
-        h("div", h("h1", { text: t("setup.title") }), h("div.muted", { text: t("setup.subtitle") }))),
+      h("div.setup-head", h("img", { src: S.app.icon, alt: "" }), h("div", this.title, this.subtitle)),
       h("div.col", { style: { gap: "18px" } },
-        step("yt-dlp", t("setup.ytdlp"), t("setup.ytdlp_desc")),
-        step("ffmpeg", t("setup.ffmpeg"), t("setup.ffmpeg_desc")),
-        step("folders", t("setup.folders"), t("setup.folders_desc"))),
+        components,
+        this.first ? step("folders", t("setup.folders"), t("setup.folders_desc")) : null),
       h("div.setup-note", { text: t("setup.note", { path: where }) }),
+      this.summary,
       this.error,
-      this.retryRow));
+      this.retryRow,
+      this.continueRow));
     $("#setup").hidden = false;
+  },
+
+  /** Todo terminó bien: cambia el título y cuenta qué se hizo. */
+  finish(downloaded) {
+    this.title.textContent = t("setup.done_title");
+    this.subtitle.textContent = t(this.first ? "setup.done_first" : "setup.done_update");
+    this.summary.replaceChildren(icon("verified"),
+      h("span", { text: t("setup.done_summary", { list: downloaded.join(", ") }) }));
+    this.summary.hidden = !downloaded.length;
+    this.continueRow.hidden = false;
+    this.continueRow.querySelector("button").focus();
   },
 
   update({ step, state, fraction, text }) {
@@ -1095,14 +1221,15 @@ const Setup = {
     st.bar.hidden = state !== "running";
     st.bar.classList.toggle("indeterminate", fraction === null);
     if (fraction !== undefined && fraction !== null) st.bar.firstChild.style.width = `${fraction * 100}%`;
-    st.pct.textContent = state === "running" ? text || "" : "";
+    // Descargando: el %. Terminado: "Descargado y verificado" o "Ya estaba instalado"
+    st.pct.textContent = state === "running" || state === "done" ? text || "" : "";
   },
 
   async run() {
     this.error.hidden = true;
     this.retryRow.hidden = true;
     const r = await api.run_setup();
-    if (r.ok) return start();
+    if (r.ok) return this.finish(r.downloaded || []);
     for (const st of Object.values(this.steps)) if (st.el.classList.contains("running")) { st.el.className = "step failed"; st.mark.replaceChildren(icon("close")); st.bar.hidden = true; }
     this.error.textContent = r.error;
     this.error.hidden = false;
@@ -1118,6 +1245,8 @@ const handlers = {
   counts: (c) => { S.counts = c; updateBadge(); },
   history: (list) => History.setAll(list),
   ytdlp: (st) => showYtdlpStatus(st),
+  components: (info) => Settings.showComponents(info),
+  deps_progress: (p) => Settings.showProgress(p),
   app_update: (info) => Banners.showUpdate(info),
   clip: (c) => Banners.showClip(c),
   setup: (st) => Setup.update(st),
@@ -1143,7 +1272,7 @@ let built = false;
 async function start() {
   const state = await api.init();
   Object.assign(S, {
-    app: state.app, settings: state.settings, themes: state.themes,
+    app: state.app, settings: state.settings, themes: state.themes, browsers: state.browsers,
     lang: state.lang, languages: state.languages, systemLang: state.system_lang,
   });
   TEXTS = state.texts;
@@ -1152,7 +1281,7 @@ async function start() {
   document.querySelectorAll("[data-t]").forEach((el) => { el.textContent = t(el.dataset.t); });
   applyTheme(state.theme);
   if (state.setup) {
-    if (!Setup.el) { Setup.el = true; Setup.build(); Setup.run(); }
+    if (!Setup.el) { Setup.el = true; Setup.build(state.missing || []); Setup.run(); }
     return;
   }
   $("#setup").hidden = true;

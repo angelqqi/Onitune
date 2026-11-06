@@ -2,11 +2,16 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
+<!-- Seguridad: la página solo carga sus propios archivos (scripts, estilos, fuentes).
+     Las imágenes pueden venir de internet (miniaturas de YouTube). Si algún día se
+     colara un <script> en un título, el navegador no lo ejecutaría.
+     'unsafe-eval' hace falta: pywebview en Linux (GTK) usa eval() para hablar con la página. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Onitune</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- Primer arranque: descarga de yt-dlp y ffmpeg -->
+  <!-- Primer arranque: descarga de yt-dlp, ffmpeg y Deno -->
   <div id="setup" hidden></div>
 
   <!-- Ventana principal -->

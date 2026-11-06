@@ -367,6 +367,11 @@ img { display: block; }
 .step.running .name, .step.done .name, .step.failed .name { color: var(--fg); }
 .step .pct { font-size: 13px; color: var(--info); }
 .setup-note { padding: 14px 16px; border-radius: 12px; background: var(--high); font-size: 13px; color: var(--muted); }
+/* Resumen al terminar: qué se descargó y que se comprobó */
+.setup-done { display: flex; gap: 10px; align-items: flex-start; padding: 14px 16px; border-radius: 12px; font-size: 14px;
+  background: color-mix(in srgb, var(--ok) 12%, transparent); color: var(--fg); }
+.setup-done .i { color: var(--ok); font-size: 20px; }
+.step.done .pct { color: var(--ok); }
 
 /* ------------------------------------------------------------------ diálogos */
 .scrim {

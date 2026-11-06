@@ -5,7 +5,6 @@ Cada descarga es un proceso de yt-dlp que corre en su propio hilo.
 gracias a los archivos .part que deja en la carpeta temporal.
 """
 
-import json
 import os
 import shutil
 import signal
@@ -120,17 +119,13 @@ class DownloadQueue:
     # ------------------------------------------------------------ guardar / cargar
 
     def _load(self) -> None:
-        if not self._file.exists():
-            return
-        try:
-            data = json.loads(self._file.read_text(encoding="utf-8"))
-        except (OSError, ValueError):
-            return
-        for d in data:
+        for d in paths.read_json(self._file, []):
             try:
                 item = DownloadItem(**{k: d[k] for k in DownloadItem.SAVED_FIELDS if k in d})
-            except TypeError:
+            except (TypeError, AttributeError):
                 continue
+            if not ytdlp.is_url(item.url):
+                continue  # solo enlaces web (ver ytdlp.is_url)
             if item.status in ACTIVE:
                 item.status = WAITING  # se cortó al cerrar: sigue cuando haya hueco
             self.items.append(item)
@@ -139,7 +134,7 @@ class DownloadQueue:
         with self._lock:
             data = [item.to_dict() for item in self.items]
         try:
-            self._file.write_text(json.dumps(data, indent=1, ensure_ascii=False), encoding="utf-8")
+            paths.write_json(self._file, data)
         except OSError:
             pass
 
@@ -295,15 +290,20 @@ class DownloadQueue:
         self._changed()
 
     def _run(self, item: DownloadItem) -> None:
-        os.makedirs(item.out_dir, exist_ok=True)
-        os.makedirs(item.tmp_dir, exist_ok=True)
-        args = ytdlp.download_args(item.url, item.options, item.out_dir, item.tmp_dir, self.settings)
         last_error = ""
         popen_kwargs = proc.hidden_kwargs()
         if sys.platform != "win32":
             popen_kwargs["start_new_session"] = True  # para poder detener también a ffmpeg
 
         try:
+            # Si la carpeta no se puede crear (p. ej. un pendrive desconectado), la
+            # descarga queda con error en vez de quedarse "Descargando" para siempre
+            try:
+                os.makedirs(item.out_dir, exist_ok=True)
+                os.makedirs(item.tmp_dir, exist_ok=True)
+            except OSError:
+                raise RuntimeError(t("error.folder", folder=item.out_dir)) from None
+            args = ytdlp.download_args(item.url, item.options, item.out_dir, item.tmp_dir, self.settings)
             item._process = subprocess.Popen(
                 args,
                 stdout=subprocess.PIPE,
@@ -340,7 +340,7 @@ class DownloadQueue:
                     last_error = line
             item._process.wait()
             code = item._process.returncode
-        except Exception as exc:  # no se pudo ni arrancar yt-dlp
+        except Exception as exc:  # no se pudo crear la carpeta o arrancar yt-dlp
             code, last_error = -1, f"ERROR: {exc}"
 
         item._process = None
